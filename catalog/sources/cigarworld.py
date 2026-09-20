@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import html
 import re
+import unicodedata
 
 from ..model import LineRecord, Vitola
-from ..normalize import clean_value, shape, size_name
+from ..normalize import clean_value, shape, size_name, wrapper
 
 DELAY = 3
 SITEMAP = "https://www.cigarworld.com/sitemap.xml/sitemap/Cw-Cigars-Objects-Product/1"
@@ -40,7 +41,8 @@ def list_urls(fetcher, brands: list[str]) -> list[str]:
 
 
 def _text(fragment: str) -> str:
-    return html.unescape(re.sub(r"<[^>]+>", " ", fragment)).replace("\xa0", " ")
+    # NFC: the copy sometimes spells "Estelí" with a combining accent, which no pattern would match
+    return unicodedata.normalize("NFC", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).replace("\xa0", " ").replace("\u2011", "-")
 
 
 def _tobaccos(page: str, cls: str) -> str | None:
@@ -52,9 +54,12 @@ def _tobaccos(page: str, cls: str) -> str | None:
 
 
 LEAF_WORDS = r"san andr[eé]s|connecticut broadleaf|broadleaf|connecticut shade|connecticut|cameroon|sumatra|habano|corojo|criollo|candela|maduro|oscuro|rosado|sun[- ]?grown"
-MADE_IN = re.compile(r"(?i)(?:hand-?made|hand-?crafted|crafted|made|rolled|produced|manufactured)\s+(?:in|at)\s+(?:the\s+)?(?:STG\s+)?([A-Za-z][A-Za-z ,]{2,40}?)(?=[.,;]|\s+(?:by|for|with|using|from|and|this|the)\b)")
+MADE_IN = re.compile(r"(?i)(?:hand-?made|hand-?crafted|crafted|made|rolled|produced|manufactured)\s+(?:in|at)\s+(?:the\s+)?(?:STG\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ ,]{2,40}?)(?=[.,;]|\s+(?:by|for|with|using|from|and|this|the)\b)")
+PLACE_MADE = re.compile(r"(?i)\b(Estel[ií]|Danl[ií]|Santiago|Nicaragua|Honduras)[- ]made\b")  # "this Estelí-made blend"
 FACTORY_COUNTRY = {"esteli": "Nicaragua", "estelí": "Nicaragua", "danli": "Honduras", "danlí": "Honduras", "santiago": "Dominican Republic",
                    "nicaragua": "Nicaragua", "honduras": "Honduras", "dominican republic": "Dominican Republic"}
+# General's own factories, when the copy names one instead of a country
+FACTORY_NAMES = {"el credito": "Dominican Republic"}  # El Credito Cigar Factory, Santiago
 
 
 def _country(desc: str) -> str | None:
@@ -64,6 +69,12 @@ def _country(desc: str) -> str | None:
         for k, v in FACTORY_COUNTRY.items():
             if k in place:
                 return v
+    m = PLACE_MADE.search(desc)
+    if m:
+        return FACTORY_COUNTRY[m.group(1).lower()]
+    for k, v in FACTORY_NAMES.items():
+        if re.search(rf"(?i)\b{k} (?:cigar )?factory\b", desc):
+            return v
     return None
 
 
@@ -82,8 +93,12 @@ def parse(url: str, page: str, country_by_line: dict | None = None) -> LineRecor
     for title, ring, length, shp in re.findall(r"title = '([^']*)', ring = '([^']*)', length = '([^']*)', shape = '([^']*)'", page):
         name = re.sub(r"\bNo\.(?=\S)", "No. ", html.unescape(title).replace("\\'", "'")).strip()  # "No.I" → "No. I"
         # the maker's shape word ("Torpedo", "Perfecto"; "Cigarillo" is a parejo) beats the size name
-        sizes.append(Vitola(name=name, length_in=float(length) if length else None, ring_gauge=int(ring) if ring else None,
-                            shape=shape(shp)[0]))
+        L, R = (float(length) if length else None), (int(ring) if ring else None)
+        if L is not None and R is not None and L >= 20 > R:
+            L, R = float(R), int(L)  # the site occasionally swaps them ("54 x 7")
+        if not L or not R:
+            L = R = None  # "0 x 0" is the site's blank
+        sizes.append(Vitola(name=name, length_in=L, ring_gauge=R, shape=shape(shp)[0]))
     if not sizes:
         return None
     # "Toro Tubo (Aluminum Tube)" → "Toro Tubo": packaging asides go, unless that would merge two sizes
@@ -97,10 +112,13 @@ def parse(url: str, page: str, country_by_line: dict | None = None) -> LineRecor
     desc = _text(d.group(1)) if d else ""
     # "Ecuadorian" names only the region; the copy often names the leaf ("Habano wrapper")
     wrapper_raw = _tobaccos(page, "wrappers")
-    words = [w for w in re.findall(LEAF_WORDS, desc, re.I)
-             if re.search(rf"\b{re.escape(w)}\b[^.]{{0,40}}wrapp|wrapp[^.]{{0,40}}\b{re.escape(w)}\b", desc, re.I)]
-    if wrapper_raw and words:
-        wrapper_raw = wrapper_raw + " " + " ".join(dict.fromkeys(w.lower() for w in words))
+    if wrapper_raw and "," in wrapper_raw:
+        wrapper_raw = None  # two wrappers listed for one line (natural and maduro sizes): nothing to pin on a row
+    elif wrapper_raw and wrapper(wrapper_raw)[0] == "unknown":
+        words = [w for w in re.findall(LEAF_WORDS, desc, re.I)
+                 if re.search(rf"\b{re.escape(w)}\b[^.]{{0,40}}wrapp|wrapp[^.]{{0,40}}\b{re.escape(w)}\b", desc, re.I)]
+        if words:
+            wrapper_raw = wrapper_raw + " " + " ".join(dict.fromkeys(w.lower() for w in words))
     country = _country(desc) or (country_by_line or {}).get(line)
     return LineRecord(
         brand=brand, line=line, source_url=url,

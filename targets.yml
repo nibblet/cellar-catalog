@@ -11,12 +11,12 @@ tier1:
   - {brand: Punch,              site: cigarworld.com,     status: done,    note: "General Cigar"}
   - {brand: Cohiba,             site: cigarworld.com,     status: done,    note: "General Cigar (US Cohiba)"}
   - {brand: CAO,                site: cigarworld.com,     status: done,    note: "General Cigar; country not stated per line"}
-  - {brand: Macanudo,           site: cigarworld.com,     status: next,    note: "General Cigar; parser exists, add a thin module"}
-  - {brand: Partagas,           site: cigarworld.com,     status: next,    note: "General Cigar (US Partagas)"}
-  - {brand: La Gloria Cubana,   site: cigarworld.com,     status: next,    note: "General Cigar"}
-  - {brand: Padron,             site: padron.com,         status: todo,    note: "image-heavy pages; check for per-line size tables"}
-  - {brand: Arturo Fuente,      site: arturofuente.com,   status: todo}
-  - {brand: My Father,          site: myfathercigars.com, status: todo}
+  - {brand: Macanudo,           site: cigarworld.com,     status: done,    note: "General Cigar; Inspirado colours Honduras, classics Dominican, M/Emissary/Mao left null"}
+  - {brand: Partagas,           site: cigarworld.com,     status: done,    note: "General Cigar (US Partagas); all Dominican"}
+  - {brand: La Gloria Cubana,   site: cigarworld.com,     status: done,    note: "General Cigar; El Credito (DR) and Estelí lines; one-off Ligas/TAA left null"}
+  - {brand: Padron,             site: padron.com,         status: next,    note: "image-heavy pages; check for per-line size tables"}
+  - {brand: Arturo Fuente,      site: arturofuente.com,   status: next}
+  - {brand: My Father,          site: myfathercigars.com, status: next}
   - {brand: Davidoff,           site: davidoff.com,       status: todo,    note: "large site; also Avo, Camacho, Zino"}
   - {brand: Camacho,            site: camachocigars.com,  status: todo}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}
@@ -40,7 +40,7 @@ tier2:
   - {brand: Mayflower,          site: mayflowercigars.com, status: done}
   - {brand: RoMa Craft,         site: romacraft.com,      status: todo}
   - {brand: Warped,             site: warpedcigars.com,   status: todo}
-  - {brand: Diesel,             site: cigarworld.com,     status: todo,    note: "General Cigar"}
+  - {brand: Diesel,             site: cigarworld.com,     status: next,    note: "General Cigar; thin module only"}
   - {brand: Gurkha,             site: gurkhacigars.com,   status: todo}
   - {brand: Dunbarton,          site: dunbartoncigars.com, status: todo}
   - {brand: Espinosa,           site: espinosacigars.com, status: todo}

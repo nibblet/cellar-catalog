@@ -129,9 +129,13 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
     def elsewhere(r):  # the row's own line has a page on the site, and it isn't this one
         return any(sb == key(r["brand"]) and _line_eq(r["line"], sl) and (sb, sl) != own for sb, sl in site)
 
+    def names(v):  # "Serie R No. 6" on a Serie R page is the catalog's "No. 6"
+        k, kl = key(v.name), key(rec.line)
+        return {k, k[len(kl):]} if kl and k.startswith(kl) and len(k) > len(kl) else {k}
+
     for i, v in enumerate(rec.vitolas):
         for r in rows:
-            if r["id"] not in taken and (key(r["expression"]) == key(v.name) or (r["expression"] is None and len(rec.vitolas) == 1 and key(r["line"]) in (key(rec.line), key(rec.brand + " " + (rec.line or ""))))):
+            if r["id"] not in taken and (key(r["expression"]) in names(v) or (r["expression"] is None and len(rec.vitolas) == 1 and key(r["line"]) in (key(rec.line), key(rec.brand + " " + (rec.line or ""))))):
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
