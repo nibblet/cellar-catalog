@@ -70,8 +70,8 @@ def strength(raw: str | None) -> str | None:
 def shape(size_name: str) -> tuple[str, bool]:
     """→ (shape, box_pressed) from a marketed size name."""
     n = size_name.lower()
-    box = bool(re.search(r"box[- ]?press|\bbp\b", n))
-    if re.search(r"torpedo|pyramid|pir[aá]mide", n):
+    box = bool(re.search(r"box[- ]?press|\bbp\b|\d{3}\s?bpt\b", n))
+    if re.search(r"torpedo|pyramid|pir[aá]mide|\d{3}\s?(?:bp)?t\b", n):  # Nub's "464T" / "466BPT"
         return "torpedo", box
     if "belicoso" in n:
         return "belicoso", box

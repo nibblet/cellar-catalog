@@ -47,6 +47,9 @@ rows are flagged, never deleted.
 - When the maker names only the origin, a new size takes the leaf its matched siblings in the
   same line already agree on (reported as "from siblings"), never a guess from elsewhere.
 - Rows a human re-files go in the source's `OVERRIDES` so the run stays reproducible.
+- When a maker publishes sizes only as an image, transcribe them into the source module and
+  cite the image; never OCR-guess. Numeric size names ("460") are generic, never "moved lines".
+- Sibling leaf inheritance only from siblings whose origin agrees with the maker's.
 - A maker's site is not exhaustive (Nub and Cain live elsewhere); use `--stale-only` for the
   rows that are genuinely gone or bogus instead of flagging every unmatched row.
 
@@ -58,3 +61,6 @@ rows are flagged, never deleted.
 | kristoff.com | done — 22 lines, 93 sizes, box images |
 | mayflowercigars.com | done — 4 lines, 12 sizes, one page per size |
 | olivacigar.com | done — 16 lines, 95 sizes, size photos; wrapper by origin, leaf from the description |
+| nubcigar.com | done — 11 lines (incl. Nub Cain), 28 sizes transcribed from the maker's line-up images |
+| caincigar.com | parked domain; Cain lives on nubcigar.com in Nub sizes only |
+| cigarworld.com | next — General Cigar (Hoyo de Monterrey, Excalibur, Macanudo, Punch, CAO …); sizes inline with length/ring/shape |

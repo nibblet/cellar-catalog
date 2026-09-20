@@ -138,7 +138,7 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
                or (r["expression"] is None and key(r["line"]) == key((rec.line or "") + " " + v.name)):
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
-        if i in hits or key(v.name) in GENERIC_SIZES: continue
+        if i in hits or key(v.name) in GENERIC_SIZES or key(v.name).isdigit(): continue  # "460" is every Nub line's size
         for r in catalog:
             if r["id"] not in taken and key(r["brand"]) == key(rec.brand) and key(r["expression"]) == key(v.name) and not _still_listed(r, v.name, site):
                 take(i, r); break
@@ -159,8 +159,9 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             rep.new_lines.append(f"{rec.brand} — {rec.line or '(flagship)'}: {len(rec.vitolas)} sizes")
         hits = _match_sizes(rec, rows, catalog, claimed, site)
         # When the maker names only the wrapper's origin, new sizes take the leaf their matched
-        # siblings in the same line already agree on, rather than contradicting them.
-        sibling_leaves = {hits[i]["wrapper_leaf"] for i in hits} - {"unknown", "other", None}
+        # siblings in the same line already agree on (siblings whose origin doesn't contradict the
+        # maker's, so a wrong seed row can't spread), rather than contradicting them.
+        sibling_leaves = {hits[i]["wrapper_leaf"] for i in hits if hits[i]["wrapper_origin"] in (None, origin)} - {"unknown", "other", None}
         line_leaf = leaf if leaf not in ("unknown", "other") else (sibling_leaves.pop() if len(sibling_leaves) == 1 else leaf)
         for i, v in enumerate(rec.vitolas):
             shp, box = shape(v.name)
