@@ -52,4 +52,5 @@ entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bour
 
 | Date | Rows | Confirmed | Complete | Confirmed & complete | Brands confirmed | Notes |
 |---|---|---|---|---|---|---|
-| 2026-09-20 | 1,153 | 40.7% | 68.5% | 33.2% | 19 / 122 | Baseline after Drew Estate, Kristoff, Mayflower, Oliva, Nub, Hoyo de Monterrey. Punch / Cohiba / CAO applying. |
+| 2026-09-20 | 1,153 | 40.7% | 68.5% | 33.2% | 19 / 122 | Baseline after Drew Estate, Kristoff, Mayflower, Oliva, Nub, Hoyo de Monterrey. |
+| 2026-09-20 | 1,465 | 54.9% | 63.6% | 36.2% | 21 / 122 | Punch, Cohiba, CAO applied (+315 rows). Completeness fell: CAO's 163 new rows carry no country (General doesn't state it per line) and General names many wrappers by region only (205 rows unknown leaf). Both are the next completeness levers. |
