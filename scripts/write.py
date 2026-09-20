@@ -16,6 +16,8 @@ a = ap.parse_args()
 src = importlib.import_module(f"catalog.sources.{a.source}")
 f = Fetcher(Path(a.cache), delay_seconds=getattr(src, "DELAY", 10))
 records = [r for u in src.list_urls(f) if f._path(u).exists() for r in [src.parse(u, f._path(u).read_text())] if r]
+if hasattr(src, "group"):
+    records = src.group(records)  # sources with a page per size
 rep = compare(records, json.loads(Path(a.export).read_text()))
 if a.stale_only is not None:
     allowed = set(a.stale_only.split(",")) if a.stale_only else set()
@@ -23,7 +25,7 @@ if a.stale_only is not None:
 country = a.country or getattr(src, "COUNTRY", None)
 brands = {r.brand for r in records}
 series = set(a.series.split(",")) if a.series else set()
-image_prefix = "https://" + src.SITEMAP.split("/")[2] + "/"
+image_prefix = getattr(src, "IMAGE_PREFIX", "https://" + src.SITEMAP.split("/")[2] + "/")
 stmts = statements(rep, maker_id=a.maker, country_by_brand={b: country for b in brands} if country else {}, series_brands=series, image_prefix=image_prefix)
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 (out / "part1.sql").write_text("\n".join(s for s in stmts if not s.startswith("insert into cellar.products (")))

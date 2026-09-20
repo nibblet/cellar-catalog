@@ -10,6 +10,7 @@ class Vitola:
     length_in: float | None
     ring_gauge: int | None
     image_url: str | None = None
+    source_url: str | None = None  # when the maker has a page per size
 
 
 @dataclass

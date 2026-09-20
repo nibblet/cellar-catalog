@@ -40,6 +40,9 @@ rows are flagged, never deleted.
   not "Kristania Criollo". When a catalog line is a prefix of several site lines, rename it.
 - Sizes a maker leaves unnamed are kept as dimension strings ("6x60"), never invented names.
 - Sizeless, expression-less rows whose line exists are placeholders — report, don't touch.
+- A maker with one page per size gives a `group()` hook to fold pages into lines; each row
+  keeps its own page as `source_url`.
+- Country only when the maker (or the owner) states it; never inferred from the filler.
 
 ## Sources
 
@@ -47,5 +50,5 @@ rows are flagged, never deleted.
 |---|---|
 | drewestate.com | done — 43 lines, 174 sizes, band + size images |
 | kristoff.com | done — 22 lines, 93 sizes, box images |
-| mayflowercigars.com | next (BigCommerce, 4 lines, per-size pages) |
+| mayflowercigars.com | done — 4 lines, 12 sizes, one page per size |
 | olivacigar.com | next (13 lines; wrapper given by origin only) |

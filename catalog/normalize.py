@@ -64,7 +64,7 @@ STRENGTH = {
 def strength(raw: str | None) -> str | None:
     if not raw:
         return None
-    return STRENGTH.get(raw.strip().lower().replace("–", "-"))
+    return STRENGTH.get(re.sub(r"\s*[-–]\s*", "-", raw.strip().lower()))
 
 
 def shape(size_name: str) -> tuple[str, bool]:
@@ -85,7 +85,7 @@ def shape(size_name: str) -> tuple[str, bool]:
 def dimensions(text: str) -> tuple[float | None, int | None]:
     """'5 x 43', '5 1/2 x 52', '6.125 x 52', '4 ¼ x 60' → (length, ring)."""
     t = text.replace("¼", " 1/4").replace("½", " 1/2").replace("¾", " 3/4").replace("⅛", " 1/8").replace("⅝", " 5/8").replace("⅜", " 3/8").replace("⅞", " 7/8")
-    m = re.search(r"(\d+(?:\.\d+)?)(?:\s+(\d{1,2})/(\d{1,2}))?\s*[x×]\s*(\d{2,3})", t, re.I)
+    m = re.search(r"(\d+(?:\.\d+)?)(?:\s+(\d{1,2})/(\d{1,2}))?\s*(?:\"|”|in\.?|inch(?:es)?)?\s*[x×]\s*(\d{2,3})", t, re.I)
     if not m:
         return None, None
     length = float(m.group(1))

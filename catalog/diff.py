@@ -163,7 +163,7 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             hit = hits.get(i)
             entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}",
                      "wrapper": rec.wrapper_raw, "leaf": leaf, "origin": origin, "shade": shade, "body": body,
-                     "binder": rec.binder, "filler": rec.filler, "band": rec.band_image_url, "size_image": v.image_url, "source_url": rec.source_url}
+                     "binder": rec.binder, "filler": rec.filler, "band": rec.band_image_url, "size_image": v.image_url, "source_url": v.source_url or rec.source_url}
             if hit is None:
                 rep.additions.append(entry)
                 continue

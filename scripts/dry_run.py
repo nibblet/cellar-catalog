@@ -15,6 +15,8 @@ for u in src.list_urls(f):
         r = src.parse(u, p.read_text(encoding="utf-8"))
         if r:
             records.append(r)
+if hasattr(src, "group"):
+    records = src.group(records)  # sources with a page per size
 catalog = json.loads(Path(sys.argv[3]).read_text())
 rep = compare(records, catalog)
 
