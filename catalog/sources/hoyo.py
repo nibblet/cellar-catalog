@@ -10,7 +10,8 @@ def list_urls(fetcher):
     return base.list_urls(fetcher, BRANDS)
 
 
-parse = base.parse
+def parse(url, page):
+    return base.parse(url, page, globals().get("COUNTRY_BY_LINE"))
 
 # Catalog rows re-filed by hand: the maker files these sizes under a line.
 OVERRIDES = {

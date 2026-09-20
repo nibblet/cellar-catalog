@@ -178,7 +178,7 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             shp, box = shape(v.name)
             shp = v.shape or shp
             hit = hits.get(i)
-            entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}", "shape": shp, "box_pressed": box,
+            entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}", "shape": shp, "box_pressed": box, "country": rec.country,
                      "wrapper": rec.wrapper_raw, "leaf": leaf, "origin": origin, "shade": shade, "body": body,
                      "binder": rec.binder, "filler": rec.filler, "band": rec.band_image_url, "size_image": v.image_url, "source_url": v.source_url or rec.source_url}
             if hit is None:
@@ -202,6 +202,8 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
                 diffs["wrapper_shade"] = (hit["wrapper_shade"], shade)
             if body and hit["body"] != body:
                 diffs["body"] = (hit["body"], body)
+            if rec.country and not hit.get("country"):
+                diffs["country"] = (None, rec.country)
             if key(hit["expression"]) != key(v.name):
                 diffs["expression"] = (hit["expression"], v.name)
             hl, rl = key(hit["line"]), key(rec.line)

@@ -49,6 +49,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
             f"expression = {q(e['size'])}",
             f"image_url = coalesce(image_url, {q(e['size_image'] or e['band'])})",
             f"source = 'maker'", f"source_url = {q(e['source_url'])}", "source_checked_at = now()",
+            f"country = coalesce(country, {q(e['country'] or country_by_brand.get(e['brand']))})" if (e.get("country") or country_by_brand.get(e["brand"])) else None,
         ]
         line_change = e["diffs"].get("line")
         if line_change and e["brand"] not in keep_line_for:
@@ -61,7 +62,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
     for e in rep.additions:
         shp, box = e["shape"], e["box_pressed"]
         length, ring = e["dims"].split(" x ")
-        country = country_by_brand.get(e["brand"])
+        country = e.get("country") or country_by_brand.get(e["brand"])
         e = {**e, "line": line_of.get((e["brand"], e["line"]), e["line"])}
         out.append(
             "insert into cellar.products (type, name, brand, line, expression, length_in, ring_gauge, shape, box_pressed, "

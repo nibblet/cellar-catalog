@@ -13,7 +13,9 @@ select * from cellar.catalog_scorecard order by type;
 *and* that carry every fact a product card needs. A row counts only if both are true.
 
 - *Confirmed*: `source = 'maker'` with a `source_url` on the maker's site (or, for bourbon, the
-  distillery / TTB COLA record). AI, seed and retailer data never count.
+  distillery / TTB COLA record). AI, seed and retailer data never count. One documented exception:
+  a maker that never states where a line is rolled may get its country from a curated per-line map
+  in the source module (CAO today), commented with its basis.
 - *Complete* (cigar): length, ring gauge, size name, wrapper leaf (not unknown/other), binder,
   filler, country, image. Body is deliberately excluded — most makers don't state it.
 - *Complete* (bourbon): proof, spirit type, producer, image.
@@ -54,3 +56,4 @@ entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bour
 |---|---|---|---|---|---|---|
 | 2026-09-20 | 1,153 | 40.7% | 68.5% | 33.2% | 19 / 122 | Baseline after Drew Estate, Kristoff, Mayflower, Oliva, Nub, Hoyo de Monterrey. |
 | 2026-09-20 | 1,465 | 54.9% | 63.6% | 36.2% | 21 / 122 | Punch, Cohiba, CAO applied (+315 rows). Completeness fell: CAO's 163 new rows carry no country (General doesn't state it per line) and General names many wrappers by region only (205 rows unknown leaf). Both are the next completeness levers. |
+| 2026-09-20 | 1,465 | 54.9% | 72.6% | 45.3% | 21 / 122 | CAO countries filled (3 lines from the maker's copy, the rest from the curated `COUNTRY_BY_LINE` map in `cao.py`); 8 General rows got a leaf from the page copy. 197 rows still have no leaf: 121 maker-sourced where the maker names only the region, 76 seed/AI rows awaiting their importer. |

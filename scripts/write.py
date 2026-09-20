@@ -40,7 +40,7 @@ for e in rep.additions:
     rows.append({"n": _name(e["brand"], line, e["size"], series), "b": e["brand"], "l": line, "x": e["size"],
                  "len": float(L) if L != "None" else None, "rg": int(R) if R != "None" else None, "sh": shp, "bp": box,
                  "wl": e["leaf"] if e["leaf"] != "other" else "unknown", "wo": e["origin"], "ws": e["shade"], "bd": e["body"],
-                 "bi": e["binder"], "fi": e["filler"], "c": country, "img": e["size_image"] or e["band"], "u": e["source_url"]})
+                 "bi": e["binder"], "fi": e["filler"], "c": e.get("country") or country, "img": e["size_image"] or e["band"], "u": e["source_url"]})
 maker_sql = f"'{a.maker}'::uuid" if a.maker else "null"
 head = ("insert into cellar.products (type, name, brand, line, expression, length_in, ring_gauge, shape, box_pressed, wrapper_leaf, wrapper_origin, wrapper_shade, body, strength, binder, filler, country, producer_id, image_url, source, source_url, source_checked_at, status, catalog_included, specs)\n"
         f"select 'cigar', r.n, r.b, r.l, r.x, r.len, r.rg, r.sh::cellar.cigar_shape, r.bp, r.wl::cellar.wrapper_leaf, r.wo, r.ws::cellar.wrapper_shade, r.bd::cellar.cigar_strength, r.bd::cellar.cigar_strength, r.bi, r.fi, r.c, {maker_sql}, r.img, 'maker', r.u, now(), 'confirmed', true, '{{}}'::jsonb\n"

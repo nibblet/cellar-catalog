@@ -26,3 +26,4 @@ class LineRecord:
     band_image_url: str | None = None
     vitolas: list[Vitola] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)
+    country: str | None = None  # only when the maker's page states where it is rolled

@@ -54,6 +54,11 @@ rows are flagged, never deleted.
   sibling ("Excalibur" No. 1 is not "Excalibur Cameroon" Lancelot).
 - A maker that states the shape wins over the size name (`Vitola.shape`).
 - A line page with no sizes is how General retires a line; treat those rows as discontinued.
+- The maker's copy often names the leaf its wrapper field only regionalises ("Honduran" + "Habano
+  wrapper" in the description); read it. When even the copy names only a region, the leaf stays
+  unknown — Cigar World's tobacco pages are listings, not definitions.
+- Country comes from the copy ("handmade in Nicaragua", "STG Estelí") when it is there; a curated
+  per-line map is the documented fallback, never a brand-wide guess.
 - A maker's site is not exhaustive (Nub and Cain live elsewhere); use `--stale-only` for the
   rows that are genuinely gone or bogus instead of flagging every unmatched row.
 

@@ -51,7 +51,23 @@ def _tobaccos(page: str, cls: str) -> str | None:
     return clean_value(", ".join(n for n in names if n)) or None
 
 
-def parse(url: str, page: str) -> LineRecord | None:
+LEAF_WORDS = r"san andr[eé]s|connecticut broadleaf|broadleaf|connecticut shade|connecticut|cameroon|sumatra|habano|corojo|criollo|candela|maduro|oscuro|rosado|sun[- ]?grown"
+MADE_IN = re.compile(r"(?i)(?:hand-?made|hand-?crafted|crafted|made|rolled|produced|manufactured)\s+(?:in|at)\s+(?:the\s+)?(?:STG\s+)?([A-Za-z][A-Za-z ,]{2,40}?)(?=[.,;]|\s+(?:by|for|with|using|from|and|this|the)\b)")
+FACTORY_COUNTRY = {"esteli": "Nicaragua", "estelí": "Nicaragua", "danli": "Honduras", "danlí": "Honduras", "santiago": "Dominican Republic",
+                   "nicaragua": "Nicaragua", "honduras": "Honduras", "dominican republic": "Dominican Republic"}
+
+
+def _country(desc: str) -> str | None:
+    """The country the maker's own copy says the cigar is rolled in, if it says so."""
+    for m in MADE_IN.finditer(desc):
+        place = m.group(1).strip().lower()
+        for k, v in FACTORY_COUNTRY.items():
+            if k in place:
+                return v
+    return None
+
+
+def parse(url: str, page: str, country_by_line: dict | None = None) -> LineRecord | None:
     slug = url.split("/")[4]
     if slug not in BRAND_MAP:
         return None
@@ -77,9 +93,18 @@ def parse(url: str, page: str) -> LineRecord | None:
             v.name = s
     body = re.search(r"setBodyKeyword\((\d)\)", page)
     og = re.search(r'property="og:image" content="([^"]+)"', page)
+    d = re.search(r'<p class="description">(.*?)</p>', page, re.S)
+    desc = _text(d.group(1)) if d else ""
+    # "Ecuadorian" names only the region; the copy often names the leaf ("Habano wrapper")
+    wrapper_raw = _tobaccos(page, "wrappers")
+    words = [w for w in re.findall(LEAF_WORDS, desc, re.I)
+             if re.search(rf"\b{re.escape(w)}\b[^.]{{0,40}}wrapp|wrapp[^.]{{0,40}}\b{re.escape(w)}\b", desc, re.I)]
+    if wrapper_raw and words:
+        wrapper_raw = wrapper_raw + " " + " ".join(dict.fromkeys(w.lower() for w in words))
+    country = _country(desc) or (country_by_line or {}).get(line)
     return LineRecord(
         brand=brand, line=line, source_url=url,
-        wrapper_raw=_tobaccos(page, "wrappers"), binder=_tobaccos(page, "binders"), filler=_tobaccos(page, "fillers"),
+        wrapper_raw=wrapper_raw, binder=_tobaccos(page, "binders"), filler=_tobaccos(page, "fillers"),
         body=BODY.get(body.group(1)) if body else None,
-        band_image_url=og.group(1) if og else None, vitolas=sizes,
+        band_image_url=og.group(1) if og else None, vitolas=sizes, country=country,
     )

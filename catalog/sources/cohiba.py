@@ -10,4 +10,5 @@ def list_urls(fetcher):
     return base.list_urls(fetcher, BRANDS)
 
 
-parse = base.parse
+def parse(url, page):
+    return base.parse(url, page, globals().get("COUNTRY_BY_LINE"))
