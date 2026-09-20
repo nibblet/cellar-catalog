@@ -158,6 +158,10 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
         if not rows:
             rep.new_lines.append(f"{rec.brand} — {rec.line or '(flagship)'}: {len(rec.vitolas)} sizes")
         hits = _match_sizes(rec, rows, catalog, claimed, site)
+        # When the maker names only the wrapper's origin, new sizes take the leaf their matched
+        # siblings in the same line already agree on, rather than contradicting them.
+        sibling_leaves = {hits[i]["wrapper_leaf"] for i in hits} - {"unknown", "other", None}
+        line_leaf = leaf if leaf not in ("unknown", "other") else (sibling_leaves.pop() if len(sibling_leaves) == 1 else leaf)
         for i, v in enumerate(rec.vitolas):
             shp, box = shape(v.name)
             hit = hits.get(i)
@@ -165,6 +169,8 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
                      "wrapper": rec.wrapper_raw, "leaf": leaf, "origin": origin, "shade": shade, "body": body,
                      "binder": rec.binder, "filler": rec.filler, "band": rec.band_image_url, "size_image": v.image_url, "source_url": v.source_url or rec.source_url}
             if hit is None:
+                if line_leaf != leaf:
+                    entry["leaf"], entry["leaf_inherited"] = line_leaf, True
                 rep.additions.append(entry)
                 continue
             claimed.add(hit["id"])

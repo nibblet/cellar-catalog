@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from catalog.fetch import Fetcher
 from catalog.diff import compare
+from catalog import overrides
 from catalog.normalize import shape
 from catalog.write import _name, statements
 
@@ -18,17 +19,19 @@ f = Fetcher(Path(a.cache), delay_seconds=getattr(src, "DELAY", 10))
 records = [r for u in src.list_urls(f) if f._path(u).exists() for r in [src.parse(u, f._path(u).read_text())] if r]
 if hasattr(src, "group"):
     records = src.group(records)  # sources with a page per size
-rep = compare(records, json.loads(Path(a.export).read_text()))
+catalog = json.loads(Path(a.export).read_text())
+series = set(a.series.split(",")) if a.series else set()
+override_sql = overrides.apply(catalog, getattr(src, "OVERRIDES", {}), series)
+rep = compare(records, catalog)
 if a.stale_only is not None:
     allowed = set(a.stale_only.split(",")) if a.stale_only else set()
     rep.stale = [r for r in rep.stale if r["id"] in allowed]
 country = a.country or getattr(src, "COUNTRY", None)
 brands = {r.brand for r in records}
-series = set(a.series.split(",")) if a.series else set()
 image_prefix = getattr(src, "IMAGE_PREFIX", "https://" + src.SITEMAP.split("/")[2] + "/")
 stmts = statements(rep, maker_id=a.maker, country_by_brand={b: country for b in brands} if country else {}, series_brands=series, image_prefix=image_prefix)
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-(out / "part1.sql").write_text("\n".join(s for s in stmts if not s.startswith("insert into cellar.products (")))
+(out / "part1.sql").write_text("\n".join(override_sql + [s for s in stmts if not s.startswith("insert into cellar.products (")]))
 line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
 rows = []
 for e in rep.additions:

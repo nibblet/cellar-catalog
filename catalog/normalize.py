@@ -1,4 +1,4 @@
-"""Free text → the catalog's enums. Deterministic; anything unrecognised is `other`/`unknown`, never a guess."""
+"""Free text → the catalog's enums. Deterministic; anything unrecognised stays `unknown`, never a guess."""
 from __future__ import annotations
 
 import re
@@ -6,7 +6,7 @@ import re
 # Leaf variety first, growing region last: "Connecticut River Valley Habano" is a Habano grown in Connecticut.
 LEAF_PATTERNS = [
     ("connecticut_broadleaf", r"broadleaf"),
-    ("san_andres", r"san andr[eé]s|mexican"),
+    ("san_andres", r"san andr[eé]s|mexic"),
     ("brazilian", r"mata fina|arapiraca|brazil"),
     ("cameroon", r"cameroon"),
     ("sumatra", r"sumatra"),
@@ -26,7 +26,7 @@ ORIGIN_PATTERNS = [
     ("Brazil", r"brazil|mata fina"),
     ("Cameroon", r"cameroon"),
     ("Indonesia", r"indonesia|sumatra"),
-    ("United States", r"connecticut river valley|pennsylvania|u\.s\.a|american|usa\b"),
+    ("United States", r"connecticut river valley|pennsylvania|united states|u\.s\.a|american|usa\b"),
 ]
 
 SHADE_PATTERNS = [
@@ -49,7 +49,7 @@ def wrapper(raw: str | None) -> tuple[str, str | None, str | None]:
     """→ (wrapper_leaf, wrapper_origin, wrapper_shade)."""
     if not raw:
         return "unknown", None, None
-    leaf = _first(LEAF_PATTERNS, raw) or "other"
+    leaf = _first(LEAF_PATTERNS, raw) or "unknown"  # an origin or a shade alone does not name a leaf
     origin = _first(ORIGIN_PATTERNS, raw)  # "Connecticut" alone names the seed, not where it grew
     shade = _first(SHADE_PATTERNS, raw)
     return leaf, origin, shade

@@ -43,6 +43,12 @@ rows are flagged, never deleted.
 - A maker with one page per size gives a `group()` hook to fold pages into lines; each row
   keeps its own page as `source_url`.
 - Country only when the maker (or the owner) states it; never inferred from the filler.
+- An origin or a shade alone never names a leaf: "Ecuador maduro" is `unknown`, not `other`.
+- When the maker names only the origin, a new size takes the leaf its matched siblings in the
+  same line already agree on (reported as "from siblings"), never a guess from elsewhere.
+- Rows a human re-files go in the source's `OVERRIDES` so the run stays reproducible.
+- A maker's site is not exhaustive (Nub and Cain live elsewhere); use `--stale-only` for the
+  rows that are genuinely gone or bogus instead of flagging every unmatched row.
 
 ## Sources
 
@@ -51,4 +57,4 @@ rows are flagged, never deleted.
 | drewestate.com | done — 43 lines, 174 sizes, band + size images |
 | kristoff.com | done — 22 lines, 93 sizes, box images |
 | mayflowercigars.com | done — 4 lines, 12 sizes, one page per size |
-| olivacigar.com | next (13 lines; wrapper given by origin only) |
+| olivacigar.com | done — 16 lines, 95 sizes, size photos; wrapper by origin, leaf from the description |
