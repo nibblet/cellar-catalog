@@ -52,7 +52,7 @@ def _wrapper_compatible(r: dict, leaf: str) -> bool:
     return (a in MADURO_LEAVES) == (b in MADURO_LEAVES)
 
 
-def _find_line(idx, rec: LineRecord) -> list[dict]:
+def _find_line(idx, rec: LineRecord, site_lines: set = frozenset()) -> list[dict]:
     candidates = [
         _line_key(rec.brand, rec.line),
         "|" + key((rec.brand + " " + (rec.line or "")).strip()),   # catch-all rows carry the brand in the line
@@ -76,7 +76,10 @@ def _find_line(idx, rec: LineRecord) -> list[dict]:
         for rows in idx.values():
             for r in rows:
                 b = key(r["line"])
-                if r not in seen and key(r["brand"]) == key(rec.brand) and b and a and (b.startswith(a) or a.startswith(b)) and _wrapper_compatible(r, leaf):
+                # …but a catalog line the site still lists by that exact name belongs to that page, not to a
+                # longer-named sibling ("Excalibur" is not a size of "Excalibur Cameroon").
+                if r not in seen and key(r["brand"]) == key(rec.brand) and b and a and (b.startswith(a) or a.startswith(b)) \
+                        and _wrapper_compatible(r, leaf) and (key(rec.brand), b) not in site_lines:
                     seen.append(r)
     return seen
 
@@ -152,7 +155,7 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
     site = {(key(r.brand), key(r.line)): {key(v.name) for v in r.vitolas} for r in records}
 
     for rec in records:
-        rows = _find_line(idx, rec)
+        rows = _find_line(idx, rec, set(site))
         leaf, origin, shade = wrapper(rec.wrapper_raw)
         body = strength(rec.body)
         if not rows:
@@ -165,8 +168,9 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
         line_leaf = leaf if leaf not in ("unknown", "other") else (sibling_leaves.pop() if len(sibling_leaves) == 1 else leaf)
         for i, v in enumerate(rec.vitolas):
             shp, box = shape(v.name)
+            shp = v.shape or shp
             hit = hits.get(i)
-            entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}",
+            entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}", "shape": shp, "box_pressed": box,
                      "wrapper": rec.wrapper_raw, "leaf": leaf, "origin": origin, "shade": shade, "body": body,
                      "binder": rec.binder, "filler": rec.filler, "band": rec.band_image_url, "size_image": v.image_url, "source_url": v.source_url or rec.source_url}
             if hit is None:

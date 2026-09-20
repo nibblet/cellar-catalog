@@ -50,6 +50,10 @@ rows are flagged, never deleted.
 - When a maker publishes sizes only as an image, transcribe them into the source module and
   cite the image; never OCR-guess. Numeric size names ("460") are generic, never "moved lines".
 - Sibling leaf inheritance only from siblings whose origin agrees with the maker's.
+- A catalog line the site still lists by that exact name is never a size of a longer-named
+  sibling ("Excalibur" No. 1 is not "Excalibur Cameroon" Lancelot).
+- A maker that states the shape wins over the size name (`Vitola.shape`).
+- A line page with no sizes is how General retires a line; treat those rows as discontinued.
 - A maker's site is not exhaustive (Nub and Cain live elsewhere); use `--stale-only` for the
   rows that are genuinely gone or bogus instead of flagging every unmatched row.
 
@@ -63,4 +67,4 @@ rows are flagged, never deleted.
 | olivacigar.com | done — 16 lines, 95 sizes, size photos; wrapper by origin, leaf from the description |
 | nubcigar.com | done — 11 lines (incl. Nub Cain), 28 sizes transcribed from the maker's line-up images |
 | caincigar.com | parked domain; Cain lives on nubcigar.com in Nub sizes only |
-| cigarworld.com | next — General Cigar (Hoyo de Monterrey, Excalibur, Macanudo, Punch, CAO …); sizes inline with length/ring/shape |
+| cigarworld.com | General Cigar's site; shared parser, one thin module per brand. Hoyo de Monterrey + Excalibur done (16 lines, 60 sizes). Punch, Cohiba, CAO next; Macanudo, Partagas, La Gloria Cubana after |

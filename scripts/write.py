@@ -35,7 +35,7 @@ out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
 rows = []
 for e in rep.additions:
-    shp, box = shape(e["size"]); L, R = e["dims"].split(" x ")
+    shp, box = e["shape"], e["box_pressed"]; L, R = e["dims"].split(" x ")
     line = line_of.get((e["brand"], e["line"]), e["line"])
     rows.append({"n": _name(e["brand"], line, e["size"], series), "b": e["brand"], "l": line, "x": e["size"],
                  "len": float(L) if L != "None" else None, "rg": int(R) if R != "None" else None, "sh": shp, "bp": box,

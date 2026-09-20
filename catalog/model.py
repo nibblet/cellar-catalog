@@ -11,6 +11,7 @@ class Vitola:
     ring_gauge: int | None
     image_url: str | None = None
     source_url: str | None = None  # when the maker has a page per size
+    shape: str | None = None       # when the maker states it; else derived from the name
 
 
 @dataclass

@@ -22,6 +22,11 @@ def _name(brand: str, line: str | None, size: str, series_brands: set[str]) -> s
         return size
     if size.lower().startswith(line.lower()) or line.lower().startswith(size.lower()):
         return size  # "Papas Fritas Collection" / "Papas Fritas"
+    # "Excalibur Dark Knight" + "Dark Knight II" → "Excalibur Dark Knight II": drop the words the size repeats
+    lw, sw = line.split(), size.split()
+    for n in range(min(len(lw), len(sw)), 0, -1):
+        if [x.lower() for x in lw[-n:]] == [x.lower() for x in sw[:n]]:
+            return " ".join(lw + sw[n:])
     return f"{line} {size}"
 
 
@@ -32,7 +37,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
     line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
 
     for e in rep.corrections:
-        shp, box = shape(e["size"])
+        shp, box = e["shape"], e["box_pressed"]
         sets = [
             f"length_in = {q(float(e['dims'].split(' x ')[0]))}" if e["dims"].split(" x ")[0] != "None" else None,
             f"ring_gauge = {q(int(e['dims'].split(' x ')[1]))}" if e["dims"].split(" x ")[1] != "None" else None,
@@ -55,7 +60,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
         out.append(f"update cellar.products set {', '.join(s for s in sets if s)} where id = {q(e['id'])} and facts_verified_at is null;")
 
     for e in rep.additions:
-        shp, box = shape(e["size"])
+        shp, box = e["shape"], e["box_pressed"]
         length, ring = e["dims"].split(" x ")
         country = country_by_brand.get(e["brand"])
         e = {**e, "line": line_of.get((e["brand"], e["line"]), e["line"])}
