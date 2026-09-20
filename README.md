@@ -57,6 +57,12 @@ rows are flagged, never deleted.
 - A maker's site is not exhaustive (Nub and Cain live elsewhere); use `--stale-only` for the
   rows that are genuinely gone or bogus instead of flagging every unmatched row.
 
+## Measuring it
+
+`SCORECARD.md` defines the metrics and targets (north star: rows confirmed by the maker *and*
+card-complete), `targets.yml` is the brand queue, `REVIEW.md` is the quarterly runbook. The numbers
+come from the `cellar.catalog_scorecard` view (`sql/`).
+
 ## Sources
 
 | Site | Status |

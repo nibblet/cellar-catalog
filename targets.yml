@@ -1,0 +1,50 @@
+# The brand queue behind SCORECARD.md's coverage metric. Tier 1 is what a US humidor is mostly
+# made of; Tier 2 is the long tail worth having. `status` is one of: done, next, blocked, todo.
+# `site` is the maker's own page (the only kind that counts as confirmed); `note` records what we
+# learned about it. Rows come from the catalog's own brand list, ranked by presence.
+
+tier1:
+  - {brand: Drew Estate,        site: drewestate.com,     status: done,    note: "43 lines; Liga Privada, Undercrown, Acid, Herrera Esteli, Tabak, KFC, Nica Rustica, Deadwood, Factory Smokes, Isla del Sol filed by brand"}
+  - {brand: Oliva,              site: olivacigar.com,     status: done,    note: "16 lines; wrapper by origin only"}
+  - {brand: Nub,                site: nubcigar.com,       status: done,    note: "sizes transcribed from images; Cain lives here"}
+  - {brand: Hoyo de Monterrey,  site: cigarworld.com,     status: done,    note: "General Cigar; Excalibur filed under Hoyo"}
+  - {brand: Punch,              site: cigarworld.com,     status: done,    note: "General Cigar"}
+  - {brand: Cohiba,             site: cigarworld.com,     status: done,    note: "General Cigar (US Cohiba)"}
+  - {brand: CAO,                site: cigarworld.com,     status: done,    note: "General Cigar; country not stated per line"}
+  - {brand: Macanudo,           site: cigarworld.com,     status: next,    note: "General Cigar; parser exists, add a thin module"}
+  - {brand: Partagas,           site: cigarworld.com,     status: next,    note: "General Cigar (US Partagas)"}
+  - {brand: La Gloria Cubana,   site: cigarworld.com,     status: next,    note: "General Cigar"}
+  - {brand: Padron,             site: padron.com,         status: todo,    note: "image-heavy pages; check for per-line size tables"}
+  - {brand: Arturo Fuente,      site: arturofuente.com,   status: todo}
+  - {brand: My Father,          site: myfathercigars.com, status: todo}
+  - {brand: Davidoff,           site: davidoff.com,       status: todo,    note: "large site; also Avo, Camacho, Zino"}
+  - {brand: Camacho,            site: camachocigars.com,  status: todo}
+  - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}
+  - {brand: Perdomo,            site: perdomocigars.com,  status: todo}
+  - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
+  - {brand: Ashton,             site: ashtoncigar.com,    status: todo,    note: "also La Aroma de Cuba, San Cristobal"}
+  - {brand: Alec Bradley,       site: alecbradley.com,    status: todo}
+  - {brand: AJ Fernandez,       site: ajfcigars.com,      status: blocked, note: "age gate in front of every page"}
+  - {brand: Joya de Nicaragua,  site: joyacigars.com,     status: todo}
+  - {brand: Montecristo,        site: montecristo.com,    status: todo,    note: "Altadis USA / Tabacalera USA; also Romeo y Julieta, H. Upmann"}
+  - {brand: Romeo y Julieta,    site: romeoyjulieta.com,  status: todo,    note: "Altadis USA"}
+  - {brand: Plasencia,          site: plasenciacigars.com, status: todo}
+  - {brand: Aganorsa Leaf,      site: aganorsaleaf.com,   status: todo}
+  - {brand: E.P. Carrillo,      site: epcarrillo.com,     status: todo}
+  - {brand: Crowned Heads,      site: crownedheads.com,   status: todo}
+  - {brand: Foundation Cigar Co, site: foundationcigarcompany.com, status: todo}
+  - {brand: Illusione,          site: illusionecigars.com, status: todo}
+
+tier2:
+  - {brand: Kristoff,           site: kristoff.com,       status: done}
+  - {brand: Mayflower,          site: mayflowercigars.com, status: done}
+  - {brand: RoMa Craft,         site: romacraft.com,      status: todo}
+  - {brand: Warped,             site: warpedcigars.com,   status: todo}
+  - {brand: Diesel,             site: cigarworld.com,     status: todo,    note: "General Cigar"}
+  - {brand: Gurkha,             site: gurkhacigars.com,   status: todo}
+  - {brand: Dunbarton,          site: dunbartoncigars.com, status: todo}
+  - {brand: Espinosa,           site: espinosacigars.com, status: todo}
+  - {brand: La Flor Dominicana, site: laflordominicana.com, status: todo}
+  - {brand: Caldwell,           site: caldwellcigars.com, status: todo}
+  - {brand: Black Label Trading Co, site: blacklabeltrading.com, status: todo}
+  - {brand: Cain,               site: nubcigar.com,       status: blocked, note: "caincigar.com parked; only Nub-size Cain is published"}

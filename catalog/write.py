@@ -48,7 +48,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
             f"binder = coalesce({q(e['binder'])}, binder)", f"filler = coalesce({q(e['filler'])}, filler)",
             f"expression = {q(e['size'])}",
             f"image_url = coalesce(image_url, {q(e['size_image'] or e['band'])})",
-            f"source = 'maker'", f"source_url = {q(e['source_url'])}",
+            f"source = 'maker'", f"source_url = {q(e['source_url'])}", "source_checked_at = now()",
         ]
         line_change = e["diffs"].get("line")
         if line_change and e["brand"] not in keep_line_for:
@@ -66,15 +66,21 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
         out.append(
             "insert into cellar.products (type, name, brand, line, expression, length_in, ring_gauge, shape, box_pressed, "
             "wrapper_leaf, wrapper_origin, wrapper_shade, body, strength, binder, filler, country, producer_id, image_url, "
-            "source, source_url, status, catalog_included, specs) values ("
+            "source, source_url, source_checked_at, status, catalog_included, specs) values ("
             + ", ".join([
                 "'cigar'", q(_name(e["brand"], e["line"], e["size"], series_brands)), q(e["brand"]), q(e["line"]), q(e["size"]),
                 q(float(length)) if length != "None" else "null", q(int(ring)) if ring != "None" else "null", q(shp), q(box),
                 q(e["leaf"] if e["leaf"] != "other" else "unknown"), q(e["origin"]), q(e["shade"]), q(e["body"]), q(e["body"]),
                 q(e["binder"]), q(e["filler"]), q(country), q(maker_id),
-                q(e["size_image"] or e["band"]), "'maker'", q(e["source_url"]), "'confirmed'", "true", "'{}'::jsonb",
+                q(e["size_image"] or e["band"]), "'maker'", q(e["source_url"]), "now()", "'confirmed'", "true", "'{}'::jsonb",
             ]) + ");"
         )
+
+    # Every row the maker's page still lists is stamped as checked, changed or not: that is what
+    # the scorecard's freshness measures.
+    checked = [e["id"] for e in rep.matched + rep.corrections]
+    if checked:
+        out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
 
     for e in rep.aliases:
         out.append(f"update cellar.products set aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(e['alias'])})) a) where id = {q(e['id'])};")
