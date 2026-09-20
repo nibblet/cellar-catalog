@@ -83,6 +83,9 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
     checked = [e["id"] for e in rep.matched + rep.corrections]
     if checked:
         out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
+    # A row the maker's page agrees with in every fact is confirmed by it, whatever source it came from.
+    for e in rep.matched:
+        out.append(f"update cellar.products set source = 'maker', source_url = {q(e['source_url'])} where id = {q(e['id'])} and source <> 'maker' and facts_verified_at is null;")
 
     for e in rep.aliases:
         out.append(f"update cellar.products set aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(e['alias'])})) a) where id = {q(e['id'])};")

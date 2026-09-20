@@ -15,9 +15,9 @@ tier1:
   - {brand: Partagas,           site: cigarworld.com,     status: done,    note: "General Cigar (US Partagas); all Dominican"}
   - {brand: La Gloria Cubana,   site: cigarworld.com,     status: done,    note: "General Cigar; El Credito (DR) and Estelí lines; one-off Ligas/TAA left null"}
   - {brand: Padron,             site: padron.com,         status: done,    note: "text sizes per series; natural/maduro as separate rows; blend facts from the vertical-integration page"}
-  - {brand: Arturo Fuente,      site: arturofuente.com,   status: next}
+  - {brand: Arturo Fuente,      site: arturofuente.com,   status: done,    note: "sizes as text per line; wrapper codes have no legend; binder/filler rarely stated"}
   - {brand: My Father,          site: myfathercigars.com, status: next}
-  - {brand: Davidoff,           site: davidoff.com,       status: todo,    note: "large site; also Avo, Camacho, Zino"}
+  - {brand: Davidoff,           site: davidoff.com,       status: next,    note: "large site; also Avo, Camacho, Zino"}
   - {brand: Camacho,            site: camachocigars.com,  status: todo}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}
   - {brand: Perdomo,            site: perdomocigars.com,  status: todo}

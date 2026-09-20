@@ -204,7 +204,8 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
                 diffs["ring_gauge"] = (hit["ring_gauge"], v.ring_gauge)
             # A shape read off a size name can promote a row to a figurado, never demote one to parejo:
             # "No. 2" says nothing about taper. Only the maker's word or a parejo vitola name does.
-            if hit["shape"] != shp and (v.shape or shp != "parejo" or key(v.name) in PAREJO_NAMES):
+            if hit["shape"] != shp and (v.shape or shp != "parejo" or key(v.name) in PAREJO_NAMES) \
+                    and not (shp == "figurado" and hit["shape"] in ("torpedo", "belicoso", "perfecto", "figurado")):  # "it tapers" never overrules how
                 diffs["shape"] = (hit["shape"], shp)
             if leaf not in ("unknown", "other") and hit["wrapper_leaf"] != leaf:
                 diffs["wrapper_leaf"] = (hit["wrapper_leaf"], leaf)
