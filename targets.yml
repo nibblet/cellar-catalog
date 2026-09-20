@@ -16,7 +16,7 @@ tier1:
   - {brand: La Gloria Cubana,   site: cigarworld.com,     status: done,    note: "General Cigar; El Credito (DR) and Estelí lines; one-off Ligas/TAA left null"}
   - {brand: Padron,             site: padron.com,         status: done,    note: "text sizes per series; natural/maduro as separate rows; blend facts from the vertical-integration page"}
   - {brand: Arturo Fuente,      site: arturofuente.com,   status: done,    note: "sizes as text per line; wrapper codes have no legend; binder/filler rarely stated"}
-  - {brand: My Father,          site: myfathercigars.com, status: next}
+  - {brand: My Father,          site: myfathercigars.com, status: done,  note: "one page per line; covers Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez; country per page from the maker's copy (USA / Honduras / Nicaragua)"}
   - {brand: Davidoff,           site: us.davidoffgeneva.com, status: done,  note: "BigCommerce data via the store's server action; covers Avo, Camacho, Zino, Zino Platinum; country by approved brand map"}
   - {brand: Camacho,            site: us.davidoffgeneva.com, status: done,  note: "via the Davidoff importer; camachocigars.com could still add leaf names for older lines"}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}

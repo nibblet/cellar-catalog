@@ -26,7 +26,7 @@ ORIGIN_PATTERNS = [
     ("Dominican Republic", r"dominican"),
     ("Brazil", r"brazil|mata fina"),
     ("Cameroon", r"cameroon"),
-    ("Indonesia", r"indonesia|sumatra"),
+    ("Indonesia", r"indonesia"),  # "Sumatra" alone names the seed, which is grown in Ecuador as often as not
     ("United States", r"connecticut river valley|pennsylvania|united states|u\.s\.a|american|usa\b"),
 ]
 

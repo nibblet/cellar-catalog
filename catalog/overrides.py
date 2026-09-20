@@ -13,6 +13,9 @@ def apply(catalog: list[dict], overrides: dict[str, dict], series_brands: set[st
         if not o:
             continue
         sets = []
+        if o.get("brand") and o["brand"] != r["brand"]:  # a row filed under the maker's house brand instead of its own
+            sets.append(f"brand = {q(o['brand'])}")
+            r["brand"] = o["brand"]
         if "line" in o and o["line"] != r["line"]:  # an explicit None re-files the row as the flagship
             sets.append(f"line = {q(o['line'])}")
             if r["line"]:
@@ -22,6 +25,6 @@ def apply(catalog: list[dict], overrides: dict[str, dict], series_brands: set[st
             sets.append(f"expression = {q(o['expression'])}")
             r["expression"] = o["expression"]
         if sets:
-            sets.append(f"name = {q(_name(r['brand'], r['line'], r['expression'], series_brands))}")
+            sets.append(f"name = {q(_name(r['brand'], r['line'], r['expression'] or '', series_brands))}")
             sql.append(f"update cellar.products set {', '.join(sets)} where id = {q(r['id'])};")
     return sql
