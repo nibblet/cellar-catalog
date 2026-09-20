@@ -114,13 +114,20 @@ def _still_listed(r: dict, size: str, site: dict[tuple[str, str], set[str]]) -> 
 
 
 def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed: set[str], site: dict) -> dict[int, dict | None]:
-    """Pair each site size with at most one catalog row: exact names first, then dimensions, then
-    product-name-as-line, then a distinctive size name that moved lines. Never the same row twice."""
+    """Pair each site size with at most one catalog row: exact names first, then names that were
+    filed as a line, then dimensions, then a distinctive size name that moved lines. Names beat
+    dimensions because seed dimensions are wrong far more often than seed names. Never the same
+    row twice; brand-wide passes leave alone rows whose line the site still lists by name."""
     hits: dict[int, dict | None] = {}
     taken: set[str] = set(claimed)
+    leaf = wrapper(rec.wrapper_raw)[0]
+    own = (key(rec.brand), key(rec.line))
 
     def take(i, r):
         hits[i] = r; taken.add(r["id"])
+
+    def elsewhere(r):  # the row's own line has a page on the site, and it isn't this one
+        return any(sb == key(r["brand"]) and _line_eq(r["line"], sl) and (sb, sl) != own for sb, sl in site)
 
     for i, v in enumerate(rec.vitolas):
         for r in rows:
@@ -128,22 +135,23 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
+        for r in catalog:
+            if r["id"] in taken or key(r["brand"]) != key(rec.brand) or elsewhere(r): continue  # exact names beat a seed row's wrapper
+            # "Blondie" filed as a line; "Blondie Belicoso" filed as line+size; "Ligero Maduro Matador" filed as a line.
+            if (key(r["line"]) == key(v.name) and r["expression"] is None) \
+               or key((r["line"] or "") + " " + (r["expression"] or "")) == key(v.name) \
+               or ((r["expression"] is None or key(r["expression"]) in GENERIC_SIZES) and key(r["line"]) == key((rec.line or "") + " " + v.name)):
+                take(i, r); break
+    for i, v in enumerate(rec.vitolas):
+        if i in hits: continue
         for r in rows:
             if r["id"] not in taken and r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and abs(int(r["ring_gauge"]) - v.ring_gauge) <= 1:
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
-        if i in hits: continue
-        for r in catalog:
-            if r["id"] in taken or key(r["brand"]) != key(rec.brand): continue
-            # "Blondie" filed as a line; "Blondie Belicoso" filed as line+size; "Ligero Maduro Matador" filed as a line.
-            if (key(r["line"]) == key(v.name) and r["expression"] is None) \
-               or key((r["line"] or "") + " " + (r["expression"] or "")) == key(v.name) \
-               or (r["expression"] is None and key(r["line"]) == key((rec.line or "") + " " + v.name)):
-                take(i, r); break
-    for i, v in enumerate(rec.vitolas):
         if i in hits or key(v.name) in GENERIC_SIZES or key(v.name).isdigit(): continue  # "460" is every Nub line's size
         for r in catalog:
-            if r["id"] not in taken and key(r["brand"]) == key(rec.brand) and key(r["expression"]) == key(v.name) and not _still_listed(r, v.name, site):
+            if r["id"] not in taken and key(r["brand"]) == key(rec.brand) and key(r["expression"]) == key(v.name) \
+                    and not _still_listed(r, v.name, site) and not elsewhere(r) and _wrapper_compatible(r, leaf):
                 take(i, r); break
     return hits
 
@@ -162,9 +170,9 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             rep.new_lines.append(f"{rec.brand} — {rec.line or '(flagship)'}: {len(rec.vitolas)} sizes")
         hits = _match_sizes(rec, rows, catalog, claimed, site)
         # When the maker names only the wrapper's origin, new sizes take the leaf their matched
-        # siblings in the same line already agree on (siblings whose origin doesn't contradict the
-        # maker's, so a wrong seed row can't spread), rather than contradicting them.
-        sibling_leaves = {hits[i]["wrapper_leaf"] for i in hits if hits[i]["wrapper_origin"] in (None, origin)} - {"unknown", "other", None}
+        # siblings in the same line already agree on (siblings that state the same origin the maker
+        # does, so a wrong seed row can't spread), rather than contradicting them.
+        sibling_leaves = {hits[i]["wrapper_leaf"] for i in hits if origin and hits[i]["wrapper_origin"] == origin} - {"unknown", "other", None}
         line_leaf = leaf if leaf not in ("unknown", "other") else (sibling_leaves.pop() if len(sibling_leaves) == 1 else leaf)
         for i, v in enumerate(rec.vitolas):
             shp, box = shape(v.name)
@@ -203,17 +211,12 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             elif rec.line and hl and hl != rl and rl.startswith(hl) and sum(1 for (b, l) in site if b == key(rec.brand) and l.startswith(hl)) > 1:
                 # "Kristania" when the site has Kristania Criollo and Kristania Maduro: the maker's name disambiguates.
                 diffs["line"] = (hit["line"], rec.line)
-            elif not _line_eq(hit["line"], rec.line, rec.brand):
-                # The catalog filed the product name as the line, or the size moved lines on the site:
-                # move it under the maker's line. Otherwise it's just the maker's name for the same line.
-                if hl == key(v.name) or key((hit["line"] or "") + " " + (hit["expression"] or "")) == key(v.name) or not _still_listed(hit, v.name, site):
-                    diffs["line"] = (hit["line"], rec.line)
-                elif rec.line:
-                    entry["alias"] = rec.line
-                    rep.aliases.append(entry)
             elif rec.line and hl != rl:
-                entry["alias"] = rec.line
-                rep.aliases.append(entry)
+                # The maker's line name wins; the catalog's old name is kept as an alias.
+                diffs["line"] = (hit["line"], rec.line)
+                if hit["line"]:
+                    entry["alias"] = hit["line"]
+                    rep.aliases.append(entry)
             if not hit["image_url"] and (v.image_url or rec.band_image_url):
                 diffs["image"] = (None, "site has one")
             entry["id"] = hit["id"]; entry["catalog_line"] = hit["line"]; entry["diffs"] = diffs

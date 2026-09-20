@@ -32,7 +32,7 @@ image_prefix = getattr(src, "IMAGE_PREFIX", "https://" + src.SITEMAP.split("/")[
 stmts = statements(rep, maker_id=a.maker, country_by_brand={b: country for b in brands} if country else {}, series_brands=series, image_prefix=image_prefix)
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 (out / "part1.sql").write_text("\n".join(override_sql + [s for s in stmts if not s.startswith("insert into cellar.products (")]))
-line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
+line_of = {}
 rows = []
 for e in rep.additions:
     shp, box = e["shape"], e["box_pressed"]; L, R = e["dims"].split(" x ")

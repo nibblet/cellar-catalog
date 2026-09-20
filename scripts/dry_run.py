@@ -36,7 +36,7 @@ for line, sizes in sorted(by_line.items()):
 print(f"\nOVERRIDES (re-filed by hand in the source module) {len(override_sql)}")
 for s in override_sql: print("  " + s)
 print(f"\nLINE ALIASES {len(rep.aliases)}")
-for a in sorted({(e['brand'], e['catalog_line'], e['alias']) for e in rep.aliases}): print(f"  {a[0]} / {a[1]}  ← also '{a[2]}'")
+for a in sorted({(e['brand'], e['line'], e['alias']) for e in rep.aliases}): print(f"  {a[0]} / {a[1]}  ← was '{a[2]}'")
 print(f"\nNEW LINES {len(rep.new_lines)}")
 for l in rep.new_lines: print("  " + l)
 print(f"\nPLACEHOLDERS (line exists, row has no size) {len(rep.placeholders)}")

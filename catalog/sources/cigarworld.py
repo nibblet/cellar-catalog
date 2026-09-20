@@ -10,7 +10,7 @@ import html
 import re
 
 from ..model import LineRecord, Vitola
-from ..normalize import clean_value, shape
+from ..normalize import clean_value, shape, size_name
 
 DELAY = 3
 SITEMAP = "https://www.cigarworld.com/sitemap.xml/sitemap/Cw-Cigars-Objects-Product/1"
@@ -64,12 +64,17 @@ def parse(url: str, page: str) -> LineRecord | None:
         line = prefix if line.lower() == prefix.lower() else (line if prefix.lower() in line.lower() else f"{prefix} {line}")
     sizes = []
     for title, ring, length, shp in re.findall(r"title = '([^']*)', ring = '([^']*)', length = '([^']*)', shape = '([^']*)'", page):
-        name = re.sub(r"\bNo\.(?=\S)", "No. ", html.unescape(title)).strip()  # "No.I" → "No. I"
+        name = re.sub(r"\bNo\.(?=\S)", "No. ", html.unescape(title).replace("\\'", "'")).strip()  # "No.I" → "No. I"
         # the maker's shape word ("Torpedo", "Perfecto"; "Cigarillo" is a parejo) beats the size name
         sizes.append(Vitola(name=name, length_in=float(length) if length else None, ring_gauge=int(ring) if ring else None,
                             shape=shape(shp)[0]))
     if not sizes:
         return None
+    # "Toro Tubo (Aluminum Tube)" → "Toro Tubo": packaging asides go, unless that would merge two sizes
+    short = [size_name(v.name) or v.name for v in sizes]
+    if len(set(short)) == len(sizes):
+        for v, s in zip(sizes, short):
+            v.name = s
     body = re.search(r"setBodyKeyword\((\d)\)", page)
     og = re.search(r'property="og:image" content="([^"]+)"', page)
     return LineRecord(

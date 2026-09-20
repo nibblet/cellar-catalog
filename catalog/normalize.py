@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 # Leaf variety first, growing region last: "Connecticut River Valley Habano" is a Habano grown in Connecticut.
 LEAF_PATTERNS = [
@@ -13,7 +14,7 @@ LEAF_PATTERNS = [
     ("corojo", r"corojo"),
     ("criollo", r"criollo"),
     ("candela", r"candela"),
-    ("habano", r"habano"),
+    ("habano", r"habano|havana"),
     ("connecticut_shade", r"connecticut|shade"),
 ]
 
@@ -109,4 +110,5 @@ def size_name(text: str) -> str:
 def key(text: str | None) -> str:
     """Comparison key: lowercase alphanumerics only, minus any quoted or bracketed aside ("Seasonal Release")."""
     t = re.sub(r"[\"“”(].*$", "", text or "")
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()  # Pilón → Pilon
     return re.sub(r"[^a-z0-9]", "", t.lower().replace("&", "and"))

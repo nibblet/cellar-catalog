@@ -33,8 +33,7 @@ def _name(brand: str, line: str | None, size: str, series_brands: set[str]) -> s
 def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str, str], series_brands: set[str],
                image_prefix: str, keep_line_for: set[str] = frozenset()) -> list[str]:
     out: list[str] = []
-    # Where the catalog already names a line differently, new sizes join it under the catalog's name.
-    line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
+    line_of: dict = {}  # the maker's line name is the line name; aliases only record old catalog names
 
     for e in rep.corrections:
         shp, box = e["shape"], e["box_pressed"]
