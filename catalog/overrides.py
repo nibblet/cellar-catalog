@@ -13,7 +13,7 @@ def apply(catalog: list[dict], overrides: dict[str, dict], series_brands: set[st
         if not o:
             continue
         sets = []
-        if o.get("line") and o["line"] != r["line"]:
+        if "line" in o and o["line"] != r["line"]:  # an explicit None re-files the row as the flagship
             sets.append(f"line = {q(o['line'])}")
             if r["line"]:
                 sets.append(f"aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(r['line'])})) a)")

@@ -16,7 +16,12 @@ ap.add_argument("--stale-only", help="comma-separated ids allowed to be marked d
 a = ap.parse_args()
 src = importlib.import_module(f"catalog.sources.{a.source}")
 f = Fetcher(Path(a.cache), delay_seconds=getattr(src, "DELAY", 10))
-records = [r for u in src.list_urls(f) if f._path(u).exists() for r in [src.parse(u, f._path(u).read_text())] if r]
+records = []
+for u in src.list_urls(f):
+    if f._path(u).exists():
+        r = src.parse(u, f._path(u).read_text())
+        if r:
+            records.extend(r if isinstance(r, list) else [r])  # a page may yield one record per wrapper
 if hasattr(src, "group"):
     records = src.group(records)  # sources with a page per size
 catalog = json.loads(Path(a.export).read_text())

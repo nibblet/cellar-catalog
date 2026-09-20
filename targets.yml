@@ -14,7 +14,7 @@ tier1:
   - {brand: Macanudo,           site: cigarworld.com,     status: done,    note: "General Cigar; Inspirado colours Honduras, classics Dominican, M/Emissary/Mao left null"}
   - {brand: Partagas,           site: cigarworld.com,     status: done,    note: "General Cigar (US Partagas); all Dominican"}
   - {brand: La Gloria Cubana,   site: cigarworld.com,     status: done,    note: "General Cigar; El Credito (DR) and Estelí lines; one-off Ligas/TAA left null"}
-  - {brand: Padron,             site: padron.com,         status: next,    note: "image-heavy pages; check for per-line size tables"}
+  - {brand: Padron,             site: padron.com,         status: done,    note: "text sizes per series; natural/maduro as separate rows; blend facts from the vertical-integration page"}
   - {brand: Arturo Fuente,      site: arturofuente.com,   status: next}
   - {brand: My Father,          site: myfathercigars.com, status: next}
   - {brand: Davidoff,           site: davidoff.com,       status: todo,    note: "large site; also Avo, Camacho, Zino"}

@@ -78,4 +78,5 @@ come from the `cellar.catalog_scorecard` view (`sql/`).
 | olivacigar.com | done — 16 lines, 95 sizes, size photos; wrapper by origin, leaf from the description |
 | nubcigar.com | done — 11 lines (incl. Nub Cain), 28 sizes transcribed from the maker's line-up images |
 | caincigar.com | parked domain; Cain lives on nubcigar.com in Nub sizes only |
+| padron.com | done — 7 series, 56 sizes → 106 rows (one per wrapper: natural / maduro). Blend facts cited from the maker's Vertical Integration page; Special Releases publish no sizes |
 | cigarworld.com | General Cigar's site; shared parser, one thin module per brand. Done: Hoyo de Monterrey + Excalibur (16 lines, 60 sizes), Punch (28, 95), Cohiba (28, 75), CAO (66, 176), Macanudo (39, 137), Partagas (20, 84), La Gloria Cubana (34, 107). Diesel is the one General brand left |

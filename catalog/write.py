@@ -40,7 +40,8 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
         sets = [
             f"length_in = {q(float(e['dims'].split(' x ')[0]))}" if e["dims"].split(" x ")[0] != "None" else None,
             f"ring_gauge = {q(int(e['dims'].split(' x ')[1]))}" if e["dims"].split(" x ")[1] != "None" else None,
-            f"shape = {q(shp)}", f"box_pressed = {q(box)}",
+            f"shape = {q(shp)}" if "shape" in e["diffs"] else None,  # the diff decides; a name-derived parejo never overwrites a stored figurado
+            f"box_pressed = {q(box)}",
             f"wrapper_leaf = {q(e['leaf'])}" if e["leaf"] not in ("unknown", "other") else None,
             f"wrapper_origin = coalesce({q(e['origin'])}, wrapper_origin)",
             f"wrapper_shade = coalesce({q(e['shade'])}, wrapper_shade)",

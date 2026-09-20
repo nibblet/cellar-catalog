@@ -27,3 +27,4 @@ class LineRecord:
     vitolas: list[Vitola] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)
     country: str | None = None  # only when the maker's page states where it is rolled
+    box_pressed: bool | None = None  # when the maker says the whole line is pressed; else from each size name

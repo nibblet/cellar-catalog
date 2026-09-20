@@ -15,7 +15,7 @@ for u in src.list_urls(f):
     if p.exists():
         r = src.parse(u, p.read_text(encoding="utf-8"))
         if r:
-            records.append(r)
+            records.extend(r if isinstance(r, list) else [r])  # a page may yield one record per wrapper
 if hasattr(src, "group"):
     records = src.group(records)  # sources with a page per size
 catalog = json.loads(Path(sys.argv[3]).read_text())

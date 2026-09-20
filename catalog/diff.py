@@ -84,6 +84,8 @@ def _find_line(idx, rec: LineRecord, site_lines: set = frozenset()) -> list[dict
     return seen
 
 
+PAREJO_NAMES = {"robusto", "toro", "churchill", "corona", "lancero", "gordo", "gordito", "lonsdale", "petitcorona", "coronagorda",
+                "doublecorona", "grantoro", "torogrande", "robustogrande", "panetela", "magnum", "gigante", "presidente", "robustoextra"}
 GENERIC_SIZES = {"robusto", "toro", "churchill", "torpedo", "belicoso", "corona", "lancero", "gordo", "gordito",
                  "perfecto", "lonsdale", "petitcorona", "coronagorda", "doublecorona", "grantoro", "torogrande", "robustogrande"}
 
@@ -149,7 +151,8 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
         for r in rows:
-            if r["id"] not in taken and r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and abs(int(r["ring_gauge"]) - v.ring_gauge) <= 1:
+            if r["id"] in taken or _still_listed(r, r["expression"] or "", site): continue  # a row the site names belongs to that name's record
+            if r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and abs(int(r["ring_gauge"]) - v.ring_gauge) <= 1:
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits or key(v.name) in GENERIC_SIZES or key(v.name).isdigit(): continue  # "460" is every Nub line's size
@@ -164,7 +167,9 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
     rep = Report()
     idx = _catalog_index(catalog)
     claimed: set[str] = set()
-    site = {(key(r.brand), key(r.line)): {key(v.name) for v in r.vitolas} for r in records}
+    site: dict[tuple[str, str], set[str]] = {}
+    for r in records:  # a line may come as several records (one per wrapper); the site lists all their names
+        site.setdefault((key(r.brand), key(r.line)), set()).update(key(v.name) for v in r.vitolas)
 
     for rec in records:
         rows = _find_line(idx, rec, set(site))
@@ -181,6 +186,7 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
         for i, v in enumerate(rec.vitolas):
             shp, box = shape(v.name)
             shp = v.shape or shp
+            box = box or bool(rec.box_pressed)
             hit = hits.get(i)
             entry = {"brand": rec.brand, "line": rec.line, "size": v.name, "dims": f"{v.length_in} x {v.ring_gauge}", "shape": shp, "box_pressed": box, "country": rec.country,
                      "wrapper": rec.wrapper_raw, "leaf": leaf, "origin": origin, "shade": shade, "body": body,
@@ -196,7 +202,9 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
                 diffs["length_in"] = (hit["length_in"], v.length_in)
             if v.ring_gauge is not None and hit["ring_gauge"] != v.ring_gauge:
                 diffs["ring_gauge"] = (hit["ring_gauge"], v.ring_gauge)
-            if hit["shape"] != shp:
+            # A shape read off a size name can promote a row to a figurado, never demote one to parejo:
+            # "No. 2" says nothing about taper. Only the maker's word or a parejo vitola name does.
+            if hit["shape"] != shp and (v.shape or shp != "parejo" or key(v.name) in PAREJO_NAMES):
                 diffs["shape"] = (hit["shape"], shp)
             if leaf not in ("unknown", "other") and hit["wrapper_leaf"] != leaf:
                 diffs["wrapper_leaf"] = (hit["wrapper_leaf"], leaf)
