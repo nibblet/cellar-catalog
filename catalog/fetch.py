@@ -19,6 +19,22 @@ class Fetcher:
     def _path(self, url: str) -> Path:
         return self.cache_dir / (hashlib.sha1(url.encode()).hexdigest()[:16] + ".html")
 
+    def post(self, key: str, url: str, body: str, headers: dict, *, refresh: bool = False) -> str:
+        """A POST cached under `key` (a synthetic URL the source module chooses), for sites whose
+        catalog is behind an API call rather than a page."""
+        p = self._path(key)
+        if p.exists() and not refresh:
+            return p.read_text(encoding="utf-8")
+        wait = self.delay - (time.monotonic() - self._last)
+        if wait > 0:
+            time.sleep(wait)
+        req = urllib.request.Request(url, data=body.encode(), headers={"User-Agent": USER_AGENT, **headers}, method="POST")
+        with urllib.request.urlopen(req, timeout=60) as r:
+            text = r.read().decode("utf-8", errors="replace")
+        self._last = time.monotonic()
+        p.write_text(text, encoding="utf-8")
+        return text
+
     def get(self, url: str, *, refresh: bool = False) -> str:
         p = self._path(url)
         if p.exists() and not refresh:

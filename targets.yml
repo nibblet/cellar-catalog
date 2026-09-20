@@ -17,8 +17,8 @@ tier1:
   - {brand: Padron,             site: padron.com,         status: done,    note: "text sizes per series; natural/maduro as separate rows; blend facts from the vertical-integration page"}
   - {brand: Arturo Fuente,      site: arturofuente.com,   status: done,    note: "sizes as text per line; wrapper codes have no legend; binder/filler rarely stated"}
   - {brand: My Father,          site: myfathercigars.com, status: next}
-  - {brand: Davidoff,           site: davidoff.com,       status: next,    note: "large site; also Avo, Camacho, Zino"}
-  - {brand: Camacho,            site: camachocigars.com,  status: todo}
+  - {brand: Davidoff,           site: us.davidoffgeneva.com, status: done,  note: "BigCommerce data via the store's server action; covers Avo, Camacho, Zino, Zino Platinum; country by approved brand map"}
+  - {brand: Camacho,            site: us.davidoffgeneva.com, status: done,  note: "via the Davidoff importer; camachocigars.com could still add leaf names for older lines"}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}
   - {brand: Perdomo,            site: perdomocigars.com,  status: todo}
   - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
