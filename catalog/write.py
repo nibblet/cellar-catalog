@@ -26,7 +26,7 @@ def _name(brand: str, line: str | None, size: str, series_brands: set[str]) -> s
 
 
 def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str, str], series_brands: set[str],
-               keep_line_for: set[str] = frozenset()) -> list[str]:
+               image_prefix: str, keep_line_for: set[str] = frozenset()) -> list[str]:
     out: list[str] = []
     # Where the catalog already names a line differently, new sizes join it under the catalog's name.
     line_of = {(e["brand"], e["line"]): e["catalog_line"] for e in rep.aliases}
@@ -67,7 +67,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
                 "'cigar'", q(_name(e["brand"], e["line"], e["size"], series_brands)), q(e["brand"]), q(e["line"]), q(e["size"]),
                 q(float(length)) if length != "None" else "null", q(int(ring)) if ring != "None" else "null", q(shp), q(box),
                 q(e["leaf"] if e["leaf"] != "other" else "unknown"), q(e["origin"]), q(e["shade"]), q(e["body"]), q(e["body"]),
-                q(e["binder"]), q(e["filler"]), q(country), q(maker_id if country == "Nicaragua" else None),
+                q(e["binder"]), q(e["filler"]), q(country), q(maker_id),
                 q(e["size_image"] or e["band"]), "'maker'", q(e["source_url"]), "'confirmed'", "true", "'{}'::jsonb",
             ]) + ");"
         )
@@ -83,7 +83,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
     out.append(
         "insert into cellar.product_images (product_id, image_url, is_hero) "
         "select p.id, p.image_url, true from cellar.products p "
-        "where p.type = 'cigar' and p.source = 'maker' and p.image_url like 'https://drewestate.com/%' "
+        f"where p.type = 'cigar' and p.source = 'maker' and p.image_url like {q(image_prefix + '%')} "
         "and not exists (select 1 from cellar.product_images i where i.product_id = p.id);"
     )
     return out

@@ -22,6 +22,7 @@ class Report:
     additions: list[dict] = field(default_factory=list)    # site has it, catalog doesn't
     stale: list[dict] = field(default_factory=list)        # catalog has it, site doesn't
     aliases: list[dict] = field(default_factory=list)      # same product, maker names the line differently
+    placeholders: list[dict] = field(default_factory=list) # line-level row with no size; line still exists
     new_lines: list[str] = field(default_factory=list)
 
 
@@ -37,6 +38,18 @@ def _catalog_index(rows: list[dict]) -> dict[str, list[dict]]:
         for k in keys:
             idx.setdefault(k, []).append(r)
     return idx
+
+
+MADURO_LEAVES = {"connecticut_broadleaf", "brazilian", "san_andres"}
+
+
+def _wrapper_compatible(r: dict, leaf: str) -> bool:
+    """A Maduro row is not a Criollo line's size, however the names line up. Within the maduro
+    family (Broadleaf / Brazilian / San Andrés) sources disagree often enough to let it through."""
+    a, b = r.get("wrapper_leaf"), leaf
+    if not a or not b or a in ("unknown", "other") or b in ("unknown", "other") or a == b:
+        return True
+    return (a in MADURO_LEAVES) == (b in MADURO_LEAVES)
 
 
 def _find_line(idx, rec: LineRecord) -> list[dict]:
@@ -57,11 +70,13 @@ def _find_line(idx, rec: LineRecord) -> list[dict]:
                 seen.append(r)
     if not seen and rec.line:
         # "Unico" on the site, "Unico Serie" in the catalog: one is a prefix of the other, same brand.
+        # Fuzzy, so the blend has to agree: "Kristania" (Broadleaf) is not a size of "Kristania Criollo".
         a = key(rec.line)
+        leaf = wrapper(rec.wrapper_raw)[0]
         for rows in idx.values():
             for r in rows:
                 b = key(r["line"])
-                if r not in seen and key(r["brand"]) == key(rec.brand) and b and a and (b.startswith(a) or a.startswith(b)):
+                if r not in seen and key(r["brand"]) == key(rec.brand) and b and a and (b.startswith(a) or a.startswith(b)) and _wrapper_compatible(r, leaf):
                     seen.append(r)
     return seen
 
@@ -111,13 +126,16 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
         for r in rows:
-            if r["id"] not in taken and r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and int(r["ring_gauge"]) == v.ring_gauge:
+            if r["id"] not in taken and r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and abs(int(r["ring_gauge"]) - v.ring_gauge) <= 1:
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
         for r in catalog:
             if r["id"] in taken or key(r["brand"]) != key(rec.brand): continue
-            if (key(r["line"]) == key(v.name) and r["expression"] is None) or key((r["line"] or "") + " " + (r["expression"] or "")) == key(v.name):
+            # "Blondie" filed as a line; "Blondie Belicoso" filed as line+size; "Ligero Maduro Matador" filed as a line.
+            if (key(r["line"]) == key(v.name) and r["expression"] is None) \
+               or key((r["line"] or "") + " " + (r["expression"] or "")) == key(v.name) \
+               or (r["expression"] is None and key(r["line"]) == key((rec.line or "") + " " + v.name)):
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits or key(v.name) in GENERIC_SIZES: continue
@@ -167,15 +185,22 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
                 diffs["body"] = (hit["body"], body)
             if key(hit["expression"]) != key(v.name):
                 diffs["expression"] = (hit["expression"], v.name)
-            if not _line_eq(hit["line"], rec.line, rec.brand):
+            hl, rl = key(hit["line"]), key(rec.line)
+            if hl == key((rec.line or "") + " " + v.name):
+                # "Ligero Maduro Matador" filed as a line: it's the Matador size of Ligero Maduro.
+                diffs["line"] = (hit["line"], rec.line)
+            elif rec.line and hl and hl != rl and rl.startswith(hl) and sum(1 for (b, l) in site if b == key(rec.brand) and l.startswith(hl)) > 1:
+                # "Kristania" when the site has Kristania Criollo and Kristania Maduro: the maker's name disambiguates.
+                diffs["line"] = (hit["line"], rec.line)
+            elif not _line_eq(hit["line"], rec.line, rec.brand):
                 # The catalog filed the product name as the line, or the size moved lines on the site:
                 # move it under the maker's line. Otherwise it's just the maker's name for the same line.
-                if key(hit["line"]) == key(v.name) or key((hit["line"] or "") + " " + (hit["expression"] or "")) == key(v.name) or not _still_listed(hit, v.name, site):
+                if hl == key(v.name) or key((hit["line"] or "") + " " + (hit["expression"] or "")) == key(v.name) or not _still_listed(hit, v.name, site):
                     diffs["line"] = (hit["line"], rec.line)
                 elif rec.line:
                     entry["alias"] = rec.line
                     rep.aliases.append(entry)
-            elif rec.line and key(hit["line"]) != key(rec.line):
+            elif rec.line and hl != rl:
                 entry["alias"] = rec.line
                 rep.aliases.append(entry)
             if not hit["image_url"] and (v.image_url or rec.band_image_url):
@@ -183,7 +208,12 @@ def compare(records: list[LineRecord], catalog: list[dict]) -> Report:
             entry["id"] = hit["id"]; entry["catalog_line"] = hit["line"]; entry["diffs"] = diffs
             (rep.corrections if diffs else rep.matched).append(entry)
 
+    site_lines = {(key(r.brand), key(r.line)) for r in records}
     for r in catalog:
-        if r["id"] not in claimed:
+        if r["id"] in claimed:
+            continue
+        if r["expression"] is None and not r["length_in"] and any(b == key(r["brand"]) and _line_eq(r["line"], l, r["brand"]) for b, l in site_lines):
+            rep.placeholders.append(r)   # "Ligero Maduro" with no size: the line lives on; the row needs a human to pick a size
+        else:
             rep.stale.append(r)
     return rep
