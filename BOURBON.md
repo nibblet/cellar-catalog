@@ -134,6 +134,12 @@ cigar line gone from its site.
   page prints only as an image whose file name spells it out ("50-100_proof.png") is still the maker's.
 - A page the site keeps but its own lineup navigation no longer links (Rebel's 2020 French Oak Finish,
   Ezra Brooks' 90-proof Straight Rye) is history, not a listing; the lineup index or nav is the list.
+- A matched row is confirmed (`source = 'maker'`) only when the page states its proof. Angel's Envy's
+  flagship pages state none: the importer still records the maker page, name, finish and image, but the
+  row keeps its seed source until a page (or a COLA) states the proof. The dry run says
+  "[no proof stated — listed, not confirmed]".
+- A site behind a Cloudflare challenge (jeffersonsbourbon.com, legentbourbon.com) is parked, not
+  worked around with a browser: read by hand, Jefferson's pages state no proof anyway.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 

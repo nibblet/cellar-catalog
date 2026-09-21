@@ -25,10 +25,10 @@ def fx(f):  # one line of facts
 
 print(f"site: {len(records)} bottlings ({missing} pages not cached) · catalog: {len(catalog)} rows\n")
 print(f"MATCHED {len(rep.matched)}")
-for e in rep.matched: print(f"  {e['name']}  ← {e['catalog_name']}" + ("  [verified]" if e['verified'] else ""))
+for e in rep.matched: print(f"  {e['name']}  ← {e['catalog_name']}" + ("  [verified]" if e['verified'] else "") + ("  [no proof stated — listed, not confirmed]" if e['proof'] is None else ""))
 print(f"\nCORRECTIONS {len(rep.corrections)}")
 for e in rep.corrections:
-    print(f"  {e['catalog_name']}" + ("  [verified — will be skipped]" if e['verified'] else "") + "\n      " + ", ".join(f"{k}: {a} → {b}" for k, (a, b) in e["diffs"].items()))
+    print(f"  {e['catalog_name']}" + ("  [verified — will be skipped]" if e['verified'] else "") + ("  [no proof stated — corrected, not confirmed]" if e['proof'] is None else "") + "\n      " + ", ".join(f"{k}: {a} → {b}" for k, (a, b) in e["diffs"].items()))
 print(f"\nADDITIONS {len(rep.additions)}")
 for e in rep.additions: print(f"  {e['name']}  —  {fx(e)} · {rarity_for(e['name'], getattr(src, 'RARITY', [])) or 'rarity ?'}" + ("" if e['core'] else "  [not core]") + ("" if e['proof'] is not None else "  [no proof stated — will not be added]"))
 print(f"\nNEW FAMILIES {len(rep.new_families)}"); [print("  " + x) for x in rep.new_families]
