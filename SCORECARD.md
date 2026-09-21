@@ -24,7 +24,7 @@ select * from cellar.catalog_scorecard order by type;
 | | Baseline (2026-09-20) | Q4 2026 | Q1 2027 | Q2 2027 | Q3 2027 |
 |---|---|---|---|---|---|
 | Cigars confirmed & complete | **33%** (383 / 1,153) | 55% ✓ (57.7% on 2026-09-20) | 65% | 75% | **85%** |
-| Bourbon confirmed & complete | **0%** (0 / 307) | 30% | 50% | 65% | **80%** |
+| Bourbon confirmed & complete | **0%** (0 / 307) → 14.1% (55 / 391) on 2026-09-21 | 30% | 50% | 65% | **80%** |
 
 ## Supporting metrics
 
@@ -39,7 +39,7 @@ select * from cellar.catalog_scorecard order by type;
 | Maker pages | distinct maker pages behind confirmed rows | 129 pages, 6 sites | input metric, no target |
 
 Bourbon baseline: 307 live rows, 72.3% complete, 0% confirmed (184 rows carry a `source_url` but were
-entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bourbon track).
+entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bourbon track, BOURBON.md).
 
 ## How the numbers move
 
@@ -68,3 +68,4 @@ entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bour
 | 2026-09-20 | 2,513 | 80.5% | 78.1% | 66.0% | 44 / 130 | Perdomo applied: 18 seed rows corrected, 117 added, 1 duplicate merged, 2 makers → 1. Nine line pages state wrapper, binder, filler and strength for every wrapper section, so all 135 rows are complete. Modeled as one line with the wrapper in the size name ("Lot 23 / Maduro Robusto"); the seed's wrapper-in-line names are aliases. Country company-wide from The Perdomo Way. Legacy's Nicaraguan Shade Grown is a Cuban–Cameroon hybrid, so "Shade Grown" alone no longer implies Connecticut. Five lines (Estate Seleccion Vintage, Small Batch, Special Craft, Factory Tour Blend, Nick's Sticks) have gallery pages only and stay seed. Diff now matches rows filed as "Line Wrapper / Size", refuses a dimension match across light and dark wrappers, and lets prefix-named rows join a line that also has exact rows. |
 | 2026-09-20 | 2,567 | 81.1% | 78.5% | 66.9% | 45 / 130 | Diesel applied (Cigar World thin module): 6 seed rows corrected, 54 added, 6 AJ Fernandez maker rows → 1. Country curated (all rolled at Tabacalera AJ Fernandez, Estelí; two pages say so). Releases the site files as lines are filed as sizes of the line the band names (Fool's Errand, Backyard BBQ Series, Sunday Gravy, Whiskey Row Founder's Collection). The last General Cigar brand: cigarworld.com is fully covered. |
 | 2026-09-20 | 2,648 | 81.9% | 78.7% | 67.7% | 46 / 130 | Gurkha applied: 5 seed rows corrected, 82 added, 1 duplicate merged, new Gurkha Cigars maker record (the seed had pointed rows at contract factories). Every line page states wrapper, binder, filler, strength and an Origin country — no curated map. Seven Collector's Corner pages and Private Select carry no blend or sizes and are skipped. "Connecticut Maduro" no longer maps to the Connecticut shade leaf; an explicit null expression in an override now makes a placeholder. |
+| 2026-09-21 | bourbon 391 | 14.1% | 75.4% | 14.1% | 15 / 106 | Bourbon Phase 0 (19 merges, 52 flagships promoted, rarity on every row; 307 → 374 live) then the first bourbon importer, Buffalo Trace: 48 seed rows corrected or confirmed, 19 added, 7 experimental one-offs discontinued, one duplicate merged (Elmer T. Lee). The maker overruled the seed on Pappy 23 (95.6, not 90.4), Stagg (134.4), Sazerac 18 (95 from 2025), George T. Stagg's age (15+), William Larue Weller's mash (wheated). 55 maker pages, 1 site. Bourbon freshness 100%. |

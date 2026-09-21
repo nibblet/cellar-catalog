@@ -48,3 +48,19 @@ tier2:
   - {brand: Caldwell,           site: caldwellcigars.com, status: todo}
   - {brand: Black Label Trading Co, site: blacklabeltrading.com, status: todo}
   - {brand: Cain,               site: nubcigar.com,       status: blocked, note: "caincigar.com parked; only Nub-size Cain is published"}
+
+# Bourbon: producers ranked by how much of a US shelf their core ranges are. `site` is the maker's
+# own page (the only kind that counts as confirmed). See BOURBON.md.
+bourbon:
+  - {producer: Buffalo Trace,     site: buffalotracedistillery.com, status: done,  note: "Next.js; one page per bottling under /our-brands/<brand>/<expression>/; proof, named mash bill, class, bottle shot; age only where the label states it; no prices. 68 bottlings, 67 matched/added; Bourbon Cream skipped"}
+  - {producer: Beam Suntory,      site: jimbeam.com,                status: todo,  note: "also knobcreek.com, makersmark.com, basilhayden.com, bookersbourbon.com"}
+  - {producer: Heaven Hill,       site: heavenhilldistillery.com,   status: todo,  note: "sitemap 307s; per-brand sites evanwilliams.com, elijahcraig.com, larcenybourbon.com"}
+  - {producer: Brown-Forman,      site: oldforester.com,            status: todo,  note: "also woodfordreserve.com, jackdaniels.com"}
+  - {producer: Wild Turkey,       site: wildturkeybourbon.com,      status: todo,  note: "also russellsreserve.com"}
+  - {producer: Four Roses,        site: fourrosesbourbon.com,       status: todo}
+  - {producer: Barton 1792,       site: 1792bourbon.com,            status: todo}
+  - {producer: Diageo,            site: bulleit.com,                status: todo,  note: "also georgedickel.com, bladeandbowwhiskey.com; bulleit sitemap is tiny, may need the products page"}
+  - {producer: Lux Row,           site: luxrowdistillers.com,       status: todo,  note: "also rebelbourbon.com, ezrabrooks.com"}
+  - {producer: Michter's,         site: michters.com,               status: todo,  note: "no sitemap.xml; crawl from the products page"}
+  - {producer: Angel's Envy,      site: angelsenvy.com,             status: todo}
+  - {producer: Jefferson's,       site: jeffersonsbourbon.com,      status: todo}
