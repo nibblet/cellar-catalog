@@ -104,6 +104,12 @@ cigar line gone from its site.
   print the collection where the brand goes.
 - Judgment lives in the source module's tables — `REFILE` (slug → family/expression/aliases),
   `CLASS_BY_SLUG` / `FAMILY_CLASS`, `NOT_CORE`, `RARITY`, `MASH_BILLS` — so a re-run reproduces it.
+- Proof is read only from the product's own copy. Every Jack Daniel's page promotes "100 proof"
+  Bonded; every Old Forester page names its "86 Proof" and "100 Proof" siblings; a barrel *entry*
+  proof ("entering the second barrel at 100 proof") is not a bottling proof.
+- A generic name that fits two specific ones fits neither: "117 Series" is not Warehouse K when the
+  site also lists Warehouse H, and "Master's Collection" is not Sweet Oak when the catalog also
+  holds Batch Proof. Such rows stay unmatched and show in STALE for a human to decide.
 - Verified rows stay verified: the dry run shows "[verified — will be skipped]" and the SQL is guarded.
   When the maker disagrees with a verified row, that is an audit item, not an importer change.
 

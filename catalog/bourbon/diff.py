@@ -45,7 +45,7 @@ def _candidates(rec: BottlingRecord, rows: list[dict], taken: set[str]) -> list[
     return [r for r in rows if key(r["brand_family"]) == fam and r["id"] not in taken and not r.get("release_label")]
 
 
-def _pass(rec: BottlingRecord, rows: list[dict], taken: set[str], n: int, site_count: int) -> dict | None:
+def _pass(rec: BottlingRecord, rows: list[dict], taken: set[str], n: int, site_count: int, site_tokens: list[set[str]] = ()) -> dict | None:
     """One matching pass. Pass 1 is exact, later passes looser; every bottling gets a pass before
     any bottling gets the next, so a loose match never steals a row an exact one is about to claim."""
     mine = _candidates(rec, rows, taken)
@@ -63,12 +63,24 @@ def _pass(rec: BottlingRecord, rows: list[dict], taken: set[str], n: int, site_c
             for r in mine:
                 if expression_key(r["name"]) == expression_key(rec.brand_family) or expression_key(r["expression"]) in ("", expression_key(rec.brand_family)):
                     return r
-    elif n == 3:  # one expression's words inside the other's, and the proof agrees ("9 Year" ~ "Small Batch 9 Year")
-        et = expression_tokens(rec.expression)
+    elif n == 3:  # one expression's words inside the other's, and the proof agrees ("9 Year" ~ "Small Batch 9 Year");
+        et = expression_tokens(rec.expression)  # the row sharing the most words wins ("117 Series: Extra Extra Old" over "117 Series")
+        best, score = None, 0
         for r in mine:
             rt = expression_tokens(r["expression"]) or expression_tokens(r["name"].replace(r["brand_family"], ""))
             if et and rt and (et <= rt or rt <= et) and (rec.proof is None or r["proof"] is None or abs(float(r["proof"]) - rec.proof) < 0.6):
-                return r
+                if rec.proof is None and et != rt:
+                    continue  # with no proof to agree on, only the same words will do
+                # A generic name that fits two specific ones fits neither: "117 Series" is not Warehouse K
+                # when the site also has Warehouse H; "Master's Collection" is not Sweet Oak when the catalog
+                # also holds Batch Proof and Very Fine Rare.
+                if rt < et and sum(1 for t in site_tokens if rt <= t) > 1:
+                    continue
+                if et < rt and sum(1 for x in mine if et <= (expression_tokens(x["expression"]) or expression_tokens(x["name"].replace(x["brand_family"], "")))) > 1:
+                    continue
+                if len(et & rt) > score:
+                    best, score = r, len(et & rt)
+        return best
     elif n == 4:  # the site lists one bottling for the family and the catalog holds one row: the same bottle
         if site_count == 1 and len(mine) == 1:
             return mine[0]
@@ -115,10 +127,13 @@ def compare(records: list[BottlingRecord], catalog: list[dict]) -> Report:
         if key(rec.brand_family) not in families and rec.brand_family not in rep.new_families:
             rep.new_families.append(rec.brand_family)
     hits: dict[int, dict] = {}
+    tokens_by_family: dict[str, list[set[str]]] = {}
+    for rec in records:
+        tokens_by_family.setdefault(key(rec.brand_family), []).append(expression_tokens(rec.expression))
     for n in (1, 2, 3, 4):
         for rec in records:
             if id(rec) in facts and id(rec) not in hits:
-                hit = _pass(rec, catalog, taken, n, per_family[key(rec.brand_family)])
+                hit = _pass(rec, catalog, taken, n, per_family[key(rec.brand_family)], tokens_by_family[key(rec.brand_family)])
                 if hit is not None:
                     hits[id(rec)] = hit
                     taken.add(hit["id"])
