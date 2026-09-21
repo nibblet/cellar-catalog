@@ -92,6 +92,8 @@ rows to diff against over PostgREST.
 | fourrosesbourbon.com (bourbon) | done — 10 bottlings from 24 pages; one Proof / Aged line |
 | 1792bourbon.com (bourbon) | done — 8 bottlings from 8 static pages; proof in the copy or footer |
 | bulleit.com, georgedickel.com → thebar.com (bourbon) | done — 28 bottlings, 4 families; Diageo's own store is the maker's page for Dickel, Blade and Bow, I.W. Harper |
+| rebelbourbon.com, ezrabrooks.com, luxrowdistillers.com (bourbon) | done — 23 bottlings, 7 families; product pages and brand pages with a tab per variant |
+| michters.com (bourbon) | done — 19 bottlings, 3 families; BOTTLING STRENGTH block, one block per year on Legacy pages |
 | us.davidoffgeneva.com | done — Davidoff, Avo, Camacho, Zino, Zino Platinum: 191 rows from BigCommerce custom fields + metafields via the store's own server action (6 requests, no page crawl). Origins for wrapper/binder/filler and a 0–5 intensity per product; country from an approved per-brand map |
 | myfathercigars.com | done — My Father, Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez: 130 sizes from 26 line pages (`<h3>Name L x R</h3>` under each cigar image). Blend line gives wrapper/binder/filler; "Handcrafted in …" gives country per page (three lines are USA or Honduras, not Nicaragua) |
 | rockypatel.com | done — Rocky Patel, Java, Nish Patel: 189 sizes from 42 line pages (a "Cigar Details" block in five formats). Country and mild/medium/full body from the maker's Honduran / Nicaraguan collection pages (its `cigar-category` taxonomy); wrapper/binder/filler from the block where stated, else from the page copy's "… wrapper" sentence, tobacco words only |

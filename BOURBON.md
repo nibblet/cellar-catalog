@@ -125,6 +125,15 @@ cigar line gone from its site.
 - "Aged between 10 and 12 years" is a display label (`normalize.age` returns it as one); a store's
   tasting notes can quote a sibling ("I.W. Harper 15-Year-Old"), so age is read from the title and
   description only.
+- A page that lists every year's release (Michter's Legacy Series, Blood Oath's pacts) is one bottling:
+  the first block is the current release and supplies proof, age and image; the catalog's per-year rows
+  fold into it with `cellar.merge_product(child, parent, 'Pact No. 7')`, which keeps the release label.
+- A barrel-strength page that states a *range* for the year ("ranged from 107.4 to 115.2 proof") states
+  no proof; one that states the year's *average* ("109.1 proof") does. A brand that states one proof for
+  all its variants ("Like all Daviess County variants … is 96 proof") states it for each tab; a proof the
+  page prints only as an image whose file name spells it out ("50-100_proof.png") is still the maker's.
+- A page the site keeps but its own lineup navigation no longer links (Rebel's 2020 French Oak Finish,
+  Ezra Brooks' 90-proof Straight Rye) is history, not a listing; the lineup index or nav is the list.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
