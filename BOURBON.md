@@ -72,7 +72,7 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Campari | wildturkeybourbon.com, russellsreserve.com | Wild Turkey, Russell's Reserve |
 | Four Roses (Kirin) | fourrosesbourbon.com | Four Roses |
 | Barton (Sazerac) | 1792bourbon.com | 1792, Very Old Barton |
-| Diageo | bulleit.com, georgedickel.com, bladeandbowwhiskey.com | Bulleit, George Dickel, Blade and Bow, I.W. Harper |
+| Diageo | bulleit.com, georgedickel.com → thebar.com (Diageo's store) | Bulleit, George Dickel, Blade and Bow, I.W. Harper |
 | Lux Row / MGP | luxrowdistillers.com, rebelbourbon.com | Rebel, Ezra Brooks, Old Ezra, Daviess County, Blood Oath |
 | Michter's | michters.com | Michter's |
 | Angel's Envy (Bacardi) | angelsenvy.com | Angel's Envy |
@@ -114,6 +114,17 @@ cigar line gone from its site.
   importer clears `discontinued` and applies the promotion pass on every matched row.
 - Verified rows stay verified: the dry run shows "[verified — will be skipped]" and the SQL is guarded.
   When the maker disagrees with a verified row, that is an audit item, not an importer change.
+- A maker's own store is the maker's page: Diageo sells George Dickel, Blade and Bow and I.W. Harper
+  only through thebar.com, and georgedickel.com redirects there. A redirect that lands on a brand or
+  recipes page (Dickel 18 Year, Classic Recipe) is not a product page — the canonical link says where
+  it landed, and the parser returns nothing.
+- A law's minimum is not an age: the store's Bottled-in-Bond Act paragraph says "a minimum of four
+  years" on a 7-year bottling; the single-malt definition says "distilled to 160 proof or less". Both
+  paragraphs are stripped before reading. The one entry-proof exception: 1792 Full Proof is bottled at
+  its barrel entry proof, and the page says so.
+- "Aged between 10 and 12 years" is a display label (`normalize.age` returns it as one); a store's
+  tasting notes can quote a sibling ("I.W. Harper 15-Year-Old"), so age is read from the title and
+  description only.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
