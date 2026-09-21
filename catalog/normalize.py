@@ -15,7 +15,7 @@ LEAF_PATTERNS = [
     ("criollo", r"criollo"),
     ("candela", r"candela"),
     ("habano", r"habano|havana"),
-    ("connecticut_shade", r"connecticut|shade(?![- ]grown)"),  # "Nicaraguan Shade Grown" names how it was grown, not the seed
+    ("connecticut_shade", r"connecticut(?![- ]maduro)|shade(?![- ]grown)"),  # "Connecticut Maduro" is a colour, not the shade leaf; "Nicaraguan Shade Grown" names how it was grown
 ]
 
 ORIGIN_PATTERNS = [

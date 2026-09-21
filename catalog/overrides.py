@@ -21,7 +21,7 @@ def apply(catalog: list[dict], overrides: dict[str, dict], series_brands: set[st
             if r["line"]:
                 sets.append(f"aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(r['line'])})) a)")
             r["line"] = o["line"]
-        if o.get("expression") and o["expression"] != r["expression"]:
+        if "expression" in o and o["expression"] != r["expression"]:  # an explicit None makes the row a placeholder (line known, size not)
             sets.append(f"expression = {q(o['expression'])}")
             r["expression"] = o["expression"]
         if sets:

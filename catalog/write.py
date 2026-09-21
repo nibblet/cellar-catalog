@@ -18,8 +18,8 @@ def q(v) -> str:
 def _name(brand: str, line: str | None, size: str, series_brands: set[str]) -> str:
     # Catalog convention: name = line + size, without the brand. For series-style brands
     # (ACID Blue / Blondie) the size *is* the product name.
-    if brand in series_brands or not line:
-        return size or line or ""
+    if brand in series_brands or not line or not size:
+        return size or line or ""  # a placeholder row (line known, size not) is named for its line
     if size.lower().startswith(line.lower()) or line.lower().startswith(size.lower()) or f" {line.lower()} " in f" {size.lower()} ":
         return size  # "Papas Fritas Collection" / "Papas Fritas"; "Winston Churchill Limited Edition 2021" already says "Limited Edition"
     # "Excalibur Dark Knight" + "Dark Knight II" → "Excalibur Dark Knight II": drop the words the size repeats

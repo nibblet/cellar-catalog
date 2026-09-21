@@ -41,7 +41,7 @@ tier2:
   - {brand: RoMa Craft,         site: romacraft.com,      status: todo}
   - {brand: Warped,             site: warpedcigars.com,   status: todo}
   - {brand: Diesel,             site: cigarworld.com,     status: done,  note: "General Cigar thin module; country curated (AJ Fernandez, Estelí); one-size releases filed as sizes"}
-  - {brand: Gurkha,             site: gurkhacigars.com,   status: todo}
+  - {brand: Gurkha,             site: gurkhacigars.com,   status: done,  note: "WordPress; Blend block with Origin per line; Collector's Corner and Private Select pages have no blend or sizes"}
   - {brand: Dunbarton,          site: dunbartoncigars.com, status: todo}
   - {brand: Espinosa,           site: espinosacigars.com, status: todo}
   - {brand: La Flor Dominicana, site: laflordominicana.com, status: todo}
