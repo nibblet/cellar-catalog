@@ -40,7 +40,7 @@ tier2:
   - {brand: Mayflower,          site: mayflowercigars.com, status: done}
   - {brand: RoMa Craft,         site: romacraft.com,      status: todo}
   - {brand: Warped,             site: warpedcigars.com,   status: todo}
-  - {brand: Diesel,             site: cigarworld.com,     status: next,    note: "General Cigar; thin module only"}
+  - {brand: Diesel,             site: cigarworld.com,     status: done,  note: "General Cigar thin module; country curated (AJ Fernandez, Estelí); one-size releases filed as sizes"}
   - {brand: Gurkha,             site: gurkhacigars.com,   status: todo}
   - {brand: Dunbarton,          site: dunbartoncigars.com, status: todo}
   - {brand: Espinosa,           site: espinosacigars.com, status: todo}

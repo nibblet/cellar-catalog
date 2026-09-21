@@ -31,6 +31,7 @@ BRAND_MAP = {
     "macanudo": ("Macanudo", None),
     "partagas": ("Partagas", None),
     "la-gloria-cubana": ("La Gloria Cubana", None),
+    "diesel": ("Diesel", None),
 }
 
 
@@ -54,7 +55,7 @@ def _tobaccos(page: str, cls: str) -> str | None:
 
 
 LEAF_WORDS = r"san andr[eé]s|connecticut broadleaf|broadleaf|connecticut shade|connecticut|cameroon|sumatra|habano|corojo|criollo|candela|maduro|oscuro|rosado|sun[- ]?grown"
-MADE_IN = re.compile(r"(?i)(?:hand-?made|hand-?crafted|crafted|made|rolled|produced|manufactured)\s+(?:in|at)\s+(?:the\s+)?(?:STG\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ ,]{2,40}?)(?=[.,;]|\s+(?:by|for|with|using|from|and|this|the)\b)")
+MADE_IN = re.compile(r"(?i)(?:hand-?made|hand-?crafted|crafted|made|rolled|produced|manufactured)\s+(?:in|at)\s+(?:the\s+)?(?:STG\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ ,'’]{2,40}?)(?=[.,;]|\s+(?:by|for|with|using|from|and|this|the)\b)")
 PLACE_MADE = re.compile(r"(?i)\b(Estel[ií]|Danl[ií]|Santiago|Nicaragua|Honduras)[- ]made\b")  # "this Estelí-made blend"
 FACTORY_COUNTRY = {"esteli": "Nicaragua", "estelí": "Nicaragua", "danli": "Honduras", "danlí": "Honduras", "santiago": "Dominican Republic",
                    "nicaragua": "Nicaragua", "honduras": "Honduras", "dominican republic": "Dominican Republic"}
