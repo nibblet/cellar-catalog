@@ -11,6 +11,8 @@ def proof(text: str | None) -> float | None:
     if not text:
         return None
     t = text.replace(",", ".")
+    if re.search(r"\d{2,3}(?:\.\d+)?\s*(?:-|–|to|and)\s*\d{2,3}(?:\.\d+)?", t):
+        return None  # "107–114": a range is not a statement
     m = re.search(r"(\d{2,3}(?:\.\d+)?)\s*(?:proof|°|\(|$)", t, re.I)
     if m and 40 <= float(m.group(1)) <= 200:
         return float(m.group(1))
@@ -22,7 +24,8 @@ def proof(text: str | None) -> float | None:
 
 
 _WORDS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-          "eleven": 11, "twelve": 12, "fifteen": 15, "eighteen": 18, "twenty": 20, "decade": 10}
+          "eleven": 11, "twelve": 12, "fifteen": 15, "eighteen": 18, "twenty": 20, "decade": 10,
+          "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10, "twelfth": 12}
 
 
 def age(text: str | None) -> tuple[float | None, str | None]:
@@ -36,6 +39,7 @@ def age(text: str | None) -> tuple[float | None, str | None]:
         or re.search(r"\b(\d{1,2})\s*yrs?\b", t) \
         or re.search(r"\b(\d{1,2}(?:\.\d)?)\s+years?\s+(?:old|of age|in (?:the )?barrel)", t) \
         or re.search(r"\ba full (decade)\b", t) \
+        or re.search(r"\bits (fourth|fifth|sixth|seventh|eighth|ninth|tenth|twelfth) year\b", t) \
         or re.search(r"\b(\d{1,2})[- ]years?\b(?![- ]old bottle)", t)
     if not m:
         return None, None
@@ -156,6 +160,15 @@ def titlecase(text: str) -> str:
     s = re.sub(r"(\w)'S\b", r"\1's", s)
     s = re.sub(r"\bMc(\w)", lambda m: "Mc" + m.group(1).upper(), s)
     return s
+
+
+def expression_tokens(text: str | None) -> set[str]:
+    """The words of an expression, boilerplate dropped, each as a comparison key."""
+    t = (text or "").lower()
+    t = re.sub(r"\baged\s+(?:for\s+)?(?:at least\s+)?(\d+)\s*[- ]?years?(?:\s+old)?", r"\1 year", t)
+    t = re.sub(r"\b(\d+)[- ]?(?:years?|yrs?|yo)(?:[- ]old)?\b", r"\1 year", t)
+    t = re.sub(r"\b(kentucky|straight|bourbon|whiskey|whisky|tennessee|the|brand|edition|old)\b", " ", t)
+    return {key(w) for w in t.split() if key(w)}
 
 
 def expression_key(text: str | None) -> str:

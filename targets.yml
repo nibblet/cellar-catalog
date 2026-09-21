@@ -53,8 +53,8 @@ tier2:
 # own page (the only kind that counts as confirmed). See BOURBON.md.
 bourbon:
   - {producer: Buffalo Trace,     site: buffalotracedistillery.com, status: done,  note: "Next.js; one page per bottling under /our-brands/<brand>/<expression>/; proof, named mash bill, class, bottle shot; age only where the label states it; no prices. 68 bottlings, 67 matched/added; Bourbon Cream skipped"}
-  - {producer: Beam Suntory,      site: jimbeam.com,                status: todo,  note: "also knobcreek.com, makersmark.com, basilhayden.com, bookersbourbon.com"}
-  - {producer: Heaven Hill,       site: heavenhilldistillery.com,   status: todo,  note: "sitemap 307s; per-brand sites evanwilliams.com, elijahcraig.com, larcenybourbon.com"}
+  - {producer: Beam Suntory,      site: jimbeam.com,                status: done,  note: "one Drupal platform across jimbeam.com, knobcreek.com, makersmark.com, basilhaydenbourbon.com, beamdistilling.com (Baker's, Booker's, Little Book, OGD, Old Overholt, Hardin's Creek, Clermont Steep): schema.org Product + tasting-note PROOF or proof in prose; age only in the product's own copy; Booker's is one page per batch; legentbourbon.com renders client-side only (blocked)"}
+  - {producer: Heaven Hill,       site: heavenhilldistillery.com,   status: done,  note: "hand-listed .php pages (the sitemap lists a third); 'Proof: / Age:' block; elijahcraig.com for the aged single barrels and Toasted Barrel; evanwilliams.com has only two real product pages; Parker's Heritage and Heritage Collection pages are the current edition"}
   - {producer: Brown-Forman,      site: oldforester.com,            status: todo,  note: "also woodfordreserve.com, jackdaniels.com"}
   - {producer: Wild Turkey,       site: wildturkeybourbon.com,      status: todo,  note: "also russellsreserve.com"}
   - {producer: Four Roses,        site: fourrosesbourbon.com,       status: todo}

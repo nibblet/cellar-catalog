@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 from ..normalize import key
 from .model import BottlingRecord
-from .normalize import expression_key, expression_type, finish, flags, mash_bill, mash_style, spirit_type
+from .normalize import expression_key, expression_tokens, expression_type, finish, flags, mash_bill, mash_style, spirit_type
 
 
 @dataclass
@@ -63,10 +63,11 @@ def _pass(rec: BottlingRecord, rows: list[dict], taken: set[str], n: int, site_c
             for r in mine:
                 if expression_key(r["name"]) == expression_key(rec.brand_family) or expression_key(r["expression"]) in ("", expression_key(rec.brand_family)):
                     return r
-    elif n == 3:  # one expression key inside the other, and the proof agrees
+    elif n == 3:  # one expression's words inside the other's, and the proof agrees ("9 Year" ~ "Small Batch 9 Year")
+        et = expression_tokens(rec.expression)
         for r in mine:
-            rk = expression_key(r["expression"]) or expression_key(r["name"].replace(r["brand_family"], ""))
-            if ek and rk and (ek in rk or rk in ek) and (rec.proof is None or r["proof"] is None or abs(float(r["proof"]) - rec.proof) < 0.6):
+            rt = expression_tokens(r["expression"]) or expression_tokens(r["name"].replace(r["brand_family"], ""))
+            if et and rt and (et <= rt or rt <= et) and (rec.proof is None or r["proof"] is None or abs(float(r["proof"]) - rec.proof) < 0.6):
                 return r
     elif n == 4:  # the site lists one bottling for the family and the catalog holds one row: the same bottle
         if site_count == 1 and len(mine) == 1:
@@ -74,8 +75,22 @@ def _pass(rec: BottlingRecord, rows: list[dict], taken: set[str], n: int, site_c
     return None
 
 
+def _dedupe(records: list[BottlingRecord]) -> list[BottlingRecord]:
+    """Several pages may describe one bottling (each Booker's batch has a page). The last one on the
+    site wins the facts (batches are listed oldest first); the others' titles become aliases."""
+    by_key: dict[tuple[str, str], BottlingRecord] = {}
+    for rec in records:
+        k = (key(rec.brand_family), expression_key(rec.expression))
+        if k in by_key:
+            prev = by_key[k]
+            rec.aliases = sorted(set(rec.aliases) | set(prev.aliases) | ({prev.name} if prev.name != rec.name else set()))
+        by_key[k] = rec
+    return list(by_key.values())
+
+
 def compare(records: list[BottlingRecord], catalog: list[dict]) -> Report:
     rep = Report()
+    records = _dedupe(records)
     taken: set[str] = set()
     families = {key(r["brand_family"]) for r in catalog}
     site_families = set()
@@ -119,6 +134,8 @@ def compare(records: list[BottlingRecord], catalog: list[dict]) -> Report:
             d["proof"] = (hit["proof"], rec.proof)
         if rec.age_years is not None and (hit["age_years"] is None or abs(float(hit["age_years"]) - rec.age_years) >= 0.05):
             d["age_years"] = (hit["age_years"], rec.age_years)
+        elif rec.age_years is None and rec.age_label and rec.age_label != "NAS" and hit["age_years"] is None and (hit.get("age_label") or "").upper() in ("", "NAS"):
+            d["age_label"] = (hit.get("age_label"), rec.age_label)  # "8–12 yr": the maker's range, no number to filter on
         if f["spirit_type"] and hit["spirit_type"] != f["spirit_type"]:
             d["spirit_type"] = (hit["spirit_type"], f["spirit_type"])
         if f["mash_style"] and hit["mash_style"] != f["mash_style"]:

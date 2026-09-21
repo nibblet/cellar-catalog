@@ -91,6 +91,22 @@ nine years after the label dropped it), a bottle shot for every row (102 live ro
 and discontinuation — a bottling gone from the maker's page is the stale signal, the same as a
 cigar line gone from its site.
 
+### Lessons from the first three sources
+
+- A maker's page that states no proof cannot create a row; the dry run says so and the writer skips it.
+- A proof *range* ("107–114", "bottled between 108 and 114 proof") is not a statement; it reads as none.
+- An age range the label doesn't print ("8–12 Years Old") is a display label, never `age_years`.
+- Batches and chapters are one bottling: every Booker's batch page folds into Booker's (the latest
+  batch supplies proof and age), Little Book's chapters into Little Book. The dry run's STALE list is
+  where the catalog's own release-as-row duplicates surface; merge them by hand with
+  `cellar.merge_product` and record it in `sql/`.
+- Family comes from the URL (slug or host), never from the page's brand line: collection pages
+  print the collection where the brand goes.
+- Judgment lives in the source module's tables — `REFILE` (slug → family/expression/aliases),
+  `CLASS_BY_SLUG` / `FAMILY_CLASS`, `NOT_CORE`, `RARITY`, `MASH_BILLS` — so a re-run reproduces it.
+- Verified rows stay verified: the dry run shows "[verified — will be skipped]" and the SQL is guarded.
+  When the maker disagrees with a verified row, that is an audit item, not an importer change.
+
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
 The COLA public registry holds every approved label: brand, class/type, proof, age statement,

@@ -30,7 +30,7 @@ print(f"\nCORRECTIONS {len(rep.corrections)}")
 for e in rep.corrections:
     print(f"  {e['catalog_name']}" + ("  [verified — will be skipped]" if e['verified'] else "") + "\n      " + ", ".join(f"{k}: {a} → {b}" for k, (a, b) in e["diffs"].items()))
 print(f"\nADDITIONS {len(rep.additions)}")
-for e in rep.additions: print(f"  {e['name']}  —  {fx(e)} · {rarity_for(e['name'], getattr(src, 'RARITY', [])) or 'rarity ?'}" + ("" if e['core'] else "  [not core]"))
+for e in rep.additions: print(f"  {e['name']}  —  {fx(e)} · {rarity_for(e['name'], getattr(src, 'RARITY', [])) or 'rarity ?'}" + ("" if e['core'] else "  [not core]") + ("" if e['proof'] is not None else "  [no proof stated — will not be added]"))
 print(f"\nNEW FAMILIES {len(rep.new_families)}"); [print("  " + x) for x in rep.new_families]
 print(f"\nSTALE (in a family the site covers, not on the site) {len(rep.stale)}")
 for r in rep.stale: print(f"  {r['name']}  [{r['source']}{', included' if r['catalog_included'] else ''}]  {r['id']}")

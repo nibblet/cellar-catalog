@@ -21,7 +21,8 @@ def rarity_for(name: str, table: list[tuple[str, str]]) -> str | None:
     return None
 
 
-def _row(f: dict, producer: str | None, maker_id: str | None, rarity: list[tuple[str, str]] = ()) -> dict:
+def _row(f: dict, producer: str | None, maker_id: str | None, rarity: list[tuple[str, str]] = (), by_family: dict | None = None) -> dict:
+    producer, maker_id = (by_family or {}).get(f["family"], (producer, maker_id))
     return {"n": f["name"], "rar": rarity_for(f["name"], list(rarity)), "f": f["family"], "x": f["expression"], "p": f["proof"], "ay": f["age_years"], "al": f["age_label"],
             "nas": (f["age_label"] or "").upper() == "NAS",  # only when the maker says so; silence is not NAS
             "et": f["expression_type"], "ms": f["mash_style"] or "unknown",
@@ -29,8 +30,8 @@ def _row(f: dict, producer: str | None, maker_id: str | None, rarity: list[tuple
             "msrp": f["msrp"], "core": f["core"], "al2": f["aliases"], "img": f["image"], "u": f["source_url"], "pr": producer, "mk": maker_id}
 
 
-def insert_batches(additions: list[dict], *, producer: str | None, maker_id: str | None, rarity: list[tuple[str, str]] = (), size: int = 40) -> list[str]:
-    rows = [_row(f, producer, maker_id, rarity) for f in additions]
+def insert_batches(additions: list[dict], *, producer: str | None, maker_id: str | None, rarity: list[tuple[str, str]] = (), by_family: dict | None = None, size: int = 40) -> list[str]:
+    rows = [_row(f, producer, maker_id, rarity, by_family) for f in additions if f["proof"] is not None]  # no proof on the maker's page: reported, not added
     head = (f"insert into cellar.products ({INSERT_COLS})\n"
             "select 'bourbon', 'confirmed', 'maker', '{}'::jsonb, r.n, r.f, r.f, r.x, r.pr, r.mk::uuid, r.p, r.ay, r.al, r.nas, "
             "r.et::cellar.expression_type, r.ms::cellar.mash_style, r.mb, r.st::cellar.spirit_type, r.bib, r.bp, r.fin, r.msrp, r.core, "
@@ -43,13 +44,16 @@ def insert_batches(additions: list[dict], *, producer: str | None, maker_id: str
     return [head + json.dumps(rows[i:i + size], ensure_ascii=False, separators=(",", ":")) + tail for i in range(0, len(rows), size)]
 
 
-def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str) -> list[str]:
+def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None) -> list[str]:
     out: list[str] = []
+    default = (producer, maker_id)
     for f in rep.corrections:
         d = f["diffs"]
+        producer, maker_id = (by_family or {}).get(f["family"], default)
         sets = [
             f"proof = {q(f['proof'])}" if "proof" in d else None,
             f"age_years = {q(f['age_years'])}, age_label = {q(f['age_label'])}, nas = false" if "age_years" in d else None,
+            f"age_label = {q(f['age_label'])}, nas = false" if "age_label" in d else None,
             f"spirit_type = {q(f['spirit_type'])}" if "spirit_type" in d else None,
             f"mash_style = {q(f['mash_style'])}" if "mash_style" in d else None,
             f"mash_bill = {q(f['mash_bill'])}" if "mash_bill" in d else None,
@@ -70,6 +74,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
     if checked:
         out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
     for f in rep.matched:  # the maker agrees with every fact: confirmed by the maker, whatever seeded it
+        producer, maker_id = (by_family or {}).get(f["family"], default)
         sets = ["source = 'maker'", f"source_url = {q(f['source_url'])}"]
         if producer:
             sets.append(f"producer = coalesce(producer, {q(producer)})")

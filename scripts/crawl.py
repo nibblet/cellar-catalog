@@ -9,7 +9,14 @@ src = importlib.import_module(f"catalog.sources.{sys.argv[1]}")
 f = Fetcher(Path(sys.argv[2]), delay_seconds=getattr(src, "DELAY", 10))
 urls = src.list_urls(f)
 print(f"{len(urls)} URLs")
+failed = 0
 for i, u in enumerate(urls, 1):
-    src.fetch(f, u) if hasattr(src, "fetch") else f.get(u)  # a source may need a POST behind a synthetic URL
-    print(f"{i:3}/{len(urls)} {u}", flush=True)
+    try:
+        src.fetch(f, u) if hasattr(src, "fetch") else f.get(u)  # a source may need a POST behind a synthetic URL
+        print(f"{i:3}/{len(urls)} {u}", flush=True)
+    except Exception as e:  # a page that moved is a finding, not a reason to stop the crawl
+        failed += 1
+        print(f"{i:3}/{len(urls)} {u}  FAILED: {e}", flush=True)
+if failed:
+    print(f"{failed} pages failed")
 print("done")
