@@ -110,6 +110,8 @@ cigar line gone from its site.
 - A generic name that fits two specific ones fits neither: "117 Series" is not Warehouse K when the
   site also lists Warehouse H, and "Master's Collection" is not Sweet Oak when the catalog also
   holds Batch Proof. Such rows stay unmatched and show in STALE for a human to decide.
+- A row the maker still lists is not discontinued, and if it is core range it is browsable: the
+  importer clears `discontinued` and applies the promotion pass on every matched row.
 - Verified rows stay verified: the dry run shows "[verified — will be skipped]" and the SQL is guarded.
   When the maker disagrees with a verified row, that is an audit item, not an importer change.
 
