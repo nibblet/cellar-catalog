@@ -19,7 +19,7 @@ tier1:
   - {brand: My Father,          site: myfathercigars.com, status: done,  note: "one page per line; covers Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez; country per page from the maker's copy (USA / Honduras / Nicaragua)"}
   - {brand: Davidoff,           site: us.davidoffgeneva.com, status: done,  note: "BigCommerce data via the store's server action; covers Avo, Camacho, Zino, Zino Platinum; country by approved brand map"}
   - {brand: Camacho,            site: us.davidoffgeneva.com, status: done,  note: "via the Davidoff importer; camachocigars.com could still add leaf names for older lines"}
-  - {brand: Rocky Patel,        site: rockypatel.com,     status: todo}
+  - {brand: Rocky Patel,        site: rockypatel.com,     status: done,  note: "one page per line, five size formats; country and body from the site's cigar-category taxonomy; wrapper from page copy on most lines; 8 pages list no sizes"}
   - {brand: Perdomo,            site: perdomocigars.com,  status: todo}
   - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
   - {brand: Ashton,             site: ashtoncigar.com,    status: todo,    note: "also La Aroma de Cuba, San Cristobal"}
