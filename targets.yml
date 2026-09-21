@@ -20,7 +20,7 @@ tier1:
   - {brand: Davidoff,           site: us.davidoffgeneva.com, status: done,  note: "BigCommerce data via the store's server action; covers Avo, Camacho, Zino, Zino Platinum; country by approved brand map"}
   - {brand: Camacho,            site: us.davidoffgeneva.com, status: done,  note: "via the Davidoff importer; camachocigars.com could still add leaf names for older lines"}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: done,  note: "one page per line, five size formats; country and body from the site's cigar-category taxonomy; wrapper from page copy on most lines; 8 pages list no sizes"}
-  - {brand: Perdomo,            site: perdomocigars.com,  status: todo}
+  - {brand: Perdomo,            site: perdomocigars.com,  status: done,  note: "Squarespace; nine nav pages with a text section per wrapper; Estate Seleccion, Small Batch, Special Craft, Factory Tour Blend, Nick's Sticks are image galleries only"}
   - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
   - {brand: Ashton,             site: ashtoncigar.com,    status: todo,    note: "also La Aroma de Cuba, San Cristobal"}
   - {brand: Alec Bradley,       site: alecbradley.com,    status: todo}

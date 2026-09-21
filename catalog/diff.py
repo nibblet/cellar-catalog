@@ -43,13 +43,24 @@ def _catalog_index(rows: list[dict]) -> dict[str, list[dict]]:
 MADURO_LEAVES = {"connecticut_broadleaf", "brazilian", "san_andres"}
 
 
-def _wrapper_compatible(r: dict, leaf: str) -> bool:
+DARK_SHADES = {"maduro", "oscuro"}
+
+
+def _wrapper_compatible(r: dict, leaf: str, shade: str | None = None) -> bool:
     """A Maduro row is not a Criollo line's size, however the names line up. Within the maduro
-    family (Broadleaf / Brazilian / San Andrés) sources disagree often enough to let it through."""
+    family (Broadleaf / Brazilian / San Andrés) sources disagree often enough to let it through.
+    When the leaf is unknown on either side the shade decides: a maduro row is not a Connecticut."""
     a, b = r.get("wrapper_leaf"), leaf
-    if not a or not b or a in ("unknown", "other") or b in ("unknown", "other") or a == b:
-        return True
-    return (a in MADURO_LEAVES) == (b in MADURO_LEAVES)
+    if a and b and a not in ("unknown", "other") and b not in ("unknown", "other") and a != b:
+        return (a in MADURO_LEAVES) == (b in MADURO_LEAVES)
+    def tone(lf, sh):  # "dark", "light" or None when nothing says
+        if lf in MADURO_LEAVES or sh in DARK_SHADES:
+            return "dark"
+        if lf == "connecticut_shade" or sh == "claro":
+            return "light"
+        return None
+    ta, tb = tone(a, r.get("wrapper_shade")), tone(b, shade)
+    return not (ta and tb and ta != tb)
 
 
 def _find_line(idx, rec: LineRecord, site_lines: set = frozenset()) -> list[dict]:
@@ -68,18 +79,19 @@ def _find_line(idx, rec: LineRecord, site_lines: set = frozenset()) -> list[dict
         for r in idx.get(c or "", []):
             if r not in seen:
                 seen.append(r)
-    if not seen and rec.line:
+    if rec.line:
         # "Unico" on the site, "Unico Serie" in the catalog: one is a prefix of the other, same brand.
         # Fuzzy, so the blend has to agree: "Kristania" (Broadleaf) is not a size of "Kristania Criollo".
+        # Runs even when exact rows exist: "Fresco Maduro / Robusto" belongs with the Fresco page's rows.
         a = key(rec.line)
-        leaf = wrapper(rec.wrapper_raw)[0]
+        leaf, _, shade = wrapper(rec.wrapper_raw)
         for rows in idx.values():
             for r in rows:
                 b = key(r["line"])
                 # …but a catalog line the site still lists by that exact name belongs to that page, not to a
                 # longer-named sibling ("Excalibur" is not a size of "Excalibur Cameroon").
                 if r not in seen and key(r["brand"]) == key(rec.brand) and b and a and (b.startswith(a) or a.startswith(b)) \
-                        and _wrapper_compatible(r, leaf) and (key(rec.brand), b) not in site_lines:
+                        and _wrapper_compatible(r, leaf, shade) and (key(rec.brand), b) not in site_lines:
                     seen.append(r)
     return seen
 
@@ -108,10 +120,13 @@ def _line_eq(a: str | None, b: str | None, brand: str = "") -> bool:
 
 def _still_listed(r: dict, size: str, site: dict[tuple[str, str], set[str]]) -> bool:
     """Does the site page for this catalog row's own line still list this size name?"""
-    b = key(r["brand"])
+    b, rl = key(r["brand"]), key(r["line"])
     for (sb, sl), sizes in site.items():
-        if sb == b and _line_eq(r["line"], sl) and key(size) in sizes:
-            return True
+        if sb == b and _line_eq(r["line"], sl):
+            if key(size) in sizes:
+                return True
+            if rl.startswith(sl) and rl != sl and rl[len(sl):] + key(size) in sizes:
+                return True  # "Lot 23 Maduro / Robusto" is the Lot 23 page's "Maduro Robusto"
     return False
 
 
@@ -122,7 +137,7 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
     row twice; brand-wide passes leave alone rows whose line the site still lists by name."""
     hits: dict[int, dict | None] = {}
     taken: set[str] = set(claimed)
-    leaf = wrapper(rec.wrapper_raw)[0]
+    leaf, _, shade = wrapper(rec.wrapper_raw)
     own = (key(rec.brand), key(rec.line))
 
     def take(i, r):
@@ -135,9 +150,11 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
         k, kl = key(v.name), key(rec.line)
         return {k, k[len(kl):]} if kl and k.startswith(kl) and len(k) > len(kl) else {k}
 
+    full = lambda v: key((rec.line or "") + " " + v.name)  # "Lot 23 Maduro / Robusto" is Lot 23's "Maduro Robusto"
     for i, v in enumerate(rec.vitolas):
         for r in rows:
-            if r["id"] not in taken and (key(r["expression"]) in names(v) or (r["expression"] is None and len(rec.vitolas) == 1 and key(r["line"]) in (key(rec.line), key(rec.brand + " " + (rec.line or ""))))):
+            if r["id"] not in taken and (key(r["expression"]) in names(v) or key((r["line"] or "") + " " + (r["expression"] or "")) == full(v)
+                                         or (r["expression"] is None and len(rec.vitolas) == 1 and key(r["line"]) in (key(rec.line), key(rec.brand + " " + (rec.line or ""))))):
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
@@ -151,14 +168,14 @@ def _match_sizes(rec: LineRecord, rows: list[dict], catalog: list[dict], claimed
     for i, v in enumerate(rec.vitolas):
         if i in hits: continue
         for r in rows:
-            if r["id"] in taken or _still_listed(r, r["expression"] or "", site): continue  # a row the site names belongs to that name's record
+            if r["id"] in taken or _still_listed(r, r["expression"] or "", site) or not _wrapper_compatible(r, leaf, shade): continue  # a row the site names belongs to that name's record
             if r["length_in"] and r["ring_gauge"] and v.length_in and abs(float(r["length_in"]) - v.length_in) < 0.13 and abs(int(r["ring_gauge"]) - v.ring_gauge) <= 1:
                 take(i, r); break
     for i, v in enumerate(rec.vitolas):
         if i in hits or key(v.name) in GENERIC_SIZES or key(v.name).isdigit(): continue  # "460" is every Nub line's size
         for r in catalog:
             if r["id"] not in taken and key(r["brand"]) == key(rec.brand) and key(r["expression"]) == key(v.name) \
-                    and not _still_listed(r, v.name, site) and not elsewhere(r) and _wrapper_compatible(r, leaf):
+                    and not _still_listed(r, v.name, site) and not elsewhere(r) and _wrapper_compatible(r, leaf, shade):
                 take(i, r); break
     return hits
 
