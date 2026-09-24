@@ -34,8 +34,9 @@ def age(text: str | None) -> tuple[float | None, str | None]:
     if not text:
         return None, None
     t = text.lower()
-    rng = re.search(r"(?:aged|matured)\s+(?:for\s+)?(?:between\s+)?(\d{1,2})\s*(?:-|–|to|and)\s*(\d{1,2})[- ]years?", t)
-    if rng:  # "Aged between 10 and 12 years" is a display label, not a number
+    rng = re.search(r"(?:aged|matured)\s+(?:for\s+)?(?:between\s+)?(\d{1,2})\s*(?:-|–|to|and)\s*(\d{1,2})[- ]years?", t) \
+        or re.search(r"\b(\d{1,2})\s*(?:-|–|to)\s*(\d{1,2})\s*years?\b", t)
+    if rng:  # "Aged between 10 and 12 years" / a bare "4 - 6 Years Old" is a display label, not a number
         return None, f"{rng.group(1)}–{rng.group(2)} yr"
     m = re.search(r"(?:(?:aged|matured|rests?|rested)\s+(?:for\s+)?(?:at least\s+|a minimum of\s+|over\s+)?|minimum\s+(?:of\s+)?)(\d{1,2}(?:\.\d)?|[a-z]+)\s*[- ]?years?", t) \
         or re.search(r"\b(\d{1,2}(?:\.\d)?|[a-z]+)[- ]year[- ]old\b", t) \

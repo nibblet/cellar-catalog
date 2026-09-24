@@ -78,8 +78,8 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Angel's Envy (Bacardi) | angelsenvy.com | Angel's Envy |
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
-Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest done 2026-09-24;
-Peerless blocked (label-photography-only data, no text); next: Wilderness Trail, Penelope, Smoke Wagon,
+Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope done
+2026-09-24; Peerless and Wilderness Trail blocked (no machine-readable spec data); next: Smoke Wagon,
 Old Elk, Barrell, Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock,
 Heaven's Door, Yellowstone.
 
@@ -161,7 +161,21 @@ cigar line gone from its site.
   label photography and renders its section titles as canvas glyphs, so nothing about a bottling is
   machine-readable, even in a rendered browser. Confirm with the browser pane (screenshot showing text
   that `document.body.textContent` doesn't contain is the tell) before concluding a site is unworkable,
-  then park it next to Jefferson's rather than attempting OCR.
+  then park it next to Jefferson's rather than attempting OCR. Wilderness Trail is the same story without
+  even the photography: the copy is genuine marketing prose with no numbers in it anywhere.
+- A brand's own store can be a wholly different, better site than its marketing domain: Penelope's
+  penelopebourbon.com (WordPress) rarely states a number, but shop.penelopebourbon.com (Shopify) carries
+  a "Bourbon Facts" spec block with Proof, Age and Mash Bill on every product page — check the shop
+  subdomain before concluding a brand's numbers aren't published. Shopify's own `/products.json` is a
+  clean way to enumerate handles; the per-product HTML page (not the JSON's marketing `body_html`) is
+  where the spec block lives.
+- A maker's site can have its own content-entry error: Penelope's Barrel Strength page has its proof
+  sitting in the "Type & Process" field instead of "Proof". Read whichever field states the number rather
+  than trusting the label, and don't assume every field means what its heading says.
+- `normalize.age()`'s range detection required a lead verb ("aged", "matured"); a bare range with none
+  ("4 - 6 Years Old") was falling through to the single-number pattern and returning the upper bound as
+  if it were a specific age. Fixed to recognize a bare "N - N years" too. Re-verify every applied
+  source's dry run after touching `normalize.py`, the same as for a `spirit_type()` change.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
