@@ -26,8 +26,8 @@ tier1:
   - {brand: Alec Bradley,       site: alecbradley.com,    status: done,    note: "Nuxt 3 + Strapi; each page embeds its product record as JSON, no text-scraping. Fine & Rare's annual releases filed under one line via the page's own parent field. Country unstated site-wide, stays unknown"}
   - {brand: AJ Fernandez,       site: ajfcigars.com,      status: blocked, note: "age gate in front of every page"}
   - {brand: Joya de Nicaragua,  site: joyacigars.com,     status: todo}
-  - {brand: Montecristo,        site: altadisusa.com,     status: todo,    note: "montecristo.com's TLS cert is expired; Altadis USA / Tabacalera USA now lives at altadisusa.com (WordPress, wp-sitemap-posts-cigar_product), also Romeo y Julieta, H. Upmann, 14 other brands"}
-  - {brand: Romeo y Julieta,    site: altadisusa.com,     status: todo,    note: "romeoyjulieta.com is a dead frameset redirecting to an unrelated site; see altadisusa.com via Montecristo"}
+  - {brand: Montecristo,        site: altadisusa.com,     status: done,    note: "montecristo.com's TLS cert is expired; Altadis USA / Tabacalera USA now lives at altadisusa.com (WordPress, wp-sitemap-posts-cigar_product), scoped to Montecristo + Romeo y Julieta of its 16 brands; origin stated per page"}
+  - {brand: Romeo y Julieta,    site: altadisusa.com,     status: done,    note: "romeoyjulieta.com is a dead frameset; via altadisusa.com alongside Montecristo — see its note"}
   - {brand: Plasencia,          site: plasenciacigars.com, status: todo}
   - {brand: Aganorsa Leaf,      site: aganorsaleaf.com,   status: todo}
   - {brand: E.P. Carrillo,      site: epcarrillo.com,     status: todo}
