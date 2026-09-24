@@ -79,9 +79,9 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec
-data); next: Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's
-Door, Yellowstone.
+Wagon, Barrell, Starlight done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no
+machine-readable spec data); next: Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken
+Cock, Heaven's Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -207,6 +207,27 @@ cigar line gone from its site.
   only recognized "21% rye" order, not a maker who labels it "Rye: 21%"; and `finish()`'s "___ finish"
   pattern mistook a product LINE's own name ("Cask Finish Series") for a real cask-finish descriptor —
   a real single bottling never calls its own finish a "series".
+- A page that ends every product with a carousel of *other* products ("Explore More Spirits") means the
+  first "N Proof" or "___ Whiskey" match on the page can belong to a sibling, not the bottling itself —
+  Starlight's Blackberry and Peach Whiskey pages both false-matched "Bourbon Whiskey" this way before the
+  carousel was truncated off first. Always cut the page down to its own content before pattern-matching
+  anything, not just proof.
+- A finishing or specialty SKU's own name often states nothing about what's in the bottle ("Mizunara
+  Reserve", "Cigar Batch" name neither bourbon nor rye) — read the spirit class from the body copy's
+  opening sentence instead of the name, and don't assume a shared URL bucket is a single spirit type
+  (Starlight's `/finishings/orchard-blossom` is a Rye living among five Bourbon finishes).
+- Boilerplate can restate a legal minimum verbatim across unrelated products: Starlight's "aged for a
+  minimum of 4 years" appears on both its Bottled-in-Bond bourbon (legally exactly 4) and its plain Carl
+  T. (not bonded, no reason to share the same floor) — the same lesson as "a law's minimum is not an
+  age" applied to marketing copy that quietly reuses the law's own phrasing as a generic description.
+  Strip the qualified phrase before reading age; an unqualified statement ("aged slowly for a full
+  decade") on the same page is unaffected.
+- A messy pre-existing seed under one old naming convention needs the same triage as any batch-row
+  duplicate, just at a larger scale: Starlight's 24 seed rows split into rows that merge by an exact
+  proof match, rows renamed in place where the current page now states no proof but the name is
+  distinctive enough to be certain, and rows with no current-site correspondence at all (one-off
+  single-barrel picks, retired cask finishes) that are simply discontinued. Don't guess a merge from
+  name similarity alone when a proof or a distinctive term isn't there to anchor it.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
