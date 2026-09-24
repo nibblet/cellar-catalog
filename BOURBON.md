@@ -78,9 +78,9 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Angel's Envy (Bacardi) | angelsenvy.com | Angel's Envy |
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
-Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Wilderness Trail, Penelope, Smoke
-Wagon, Old Elk, Barrell, Starlight, Peerless, Widow Jane, Uncle Nearest, Garrison Brothers, Rabbit
-Hole, Castle & Key, Green River, Chicken Cock, Heaven's Door, Yellowstone.
+Tier 2 (Q1 2027): Willett, New Riff done 2026-09-24; Bardstown Bourbon Co, Widow Jane, Peerless, Uncle
+Nearest next; then Wilderness Trail, Penelope, Smoke Wagon, Old Elk, Barrell, Starlight, Garrison
+Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -140,6 +140,14 @@ cigar line gone from its site.
   "[no proof stated — listed, not confirmed]".
 - A site behind a Cloudflare challenge (jeffersonsbourbon.com, legentbourbon.com) is parked, not
   worked around with a browser: read by hand, Jefferson's pages state no proof anyway.
+- One domain can host several of a family's shelf brands with no subdomain to key off (Willett's
+  kentuckybourbonwhiskey.com carries Rowan's Creek, Noah's Mill, Johnny Drum, Pure Kentucky, Kentucky
+  Vintage and Willett itself). Family is the product's own brand name, same as Lux Row's tab pages;
+  a seed row filed under the wrong family for this reason doesn't match by family, so it surfaces as
+  both a STALE row and a same-bottling ADDITION under the correct family — merge the STALE row into the
+  new one after the insert runs, by name/proof correspondence, same as any batch-row merge.
+- A single-barrel "selection" or "cigar club pick" page describes a program, not a bottling: it states
+  no proof, because every actual barrel differs. Skip crawling it rather than adding a proof-less row.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
