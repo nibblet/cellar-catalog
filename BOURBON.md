@@ -78,9 +78,10 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Angel's Envy (Bacardi) | angelsenvy.com | Angel's Envy |
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
-Tier 2 (Q1 2027): Willett, New Riff done 2026-09-24; Bardstown Bourbon Co, Widow Jane, Peerless, Uncle
-Nearest next; then Wilderness Trail, Penelope, Smoke Wagon, Old Elk, Barrell, Starlight, Garrison
-Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's Door, Yellowstone.
+Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest done 2026-09-24;
+Peerless blocked (label-photography-only data, no text); next: Wilderness Trail, Penelope, Smoke Wagon,
+Old Elk, Barrell, Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock,
+Heaven's Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -148,6 +149,19 @@ cigar line gone from its site.
   new one after the insert runs, by name/proof correspondence, same as any batch-row merge.
 - A single-barrel "selection" or "cigar club pick" page describes a program, not a bottling: it states
   no proof, because every actual barrel differs. Skip crawling it rather than adding a proof-less row.
+- Two real bugs in `catalog/bourbon/normalize.py:spirit_type()`, both the same shape: it checked the
+  combined class+name text for a disqualifying word, and a maker's own free-text name can innocently
+  contain one. Bardstown Bourbon Company's own name contains "Bourbon", so its rye was reading as
+  spirit_type=bourbon; Widow Jane's "Tequila Ocho Cask Finish" bourbon contains "tequila", so it was
+  being skipped as not-whiskey by the vodka/gin/tequila/rum exclusion. Both checks now key off
+  `class_raw` (the label's own class statement) alone — never the marketing name, which can legitimately
+  reference another spirit's cask without being that spirit. Re-verify every applied source's dry run
+  after touching `normalize.py`; both fixes were confirmed clean across all sources applied so far.
+- Some sites keep no text data at all: Kentucky Peerless bakes every proof, age and mash figure into
+  label photography and renders its section titles as canvas glyphs, so nothing about a bottling is
+  machine-readable, even in a rendered browser. Confirm with the browser pane (screenshot showing text
+  that `document.body.textContent` doesn't contain is the tell) before concluding a site is unworkable,
+  then park it next to Jefferson's rather than attempting OCR.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 

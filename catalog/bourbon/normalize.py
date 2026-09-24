@@ -57,7 +57,13 @@ def age(text: str | None) -> tuple[float | None, str | None]:
 def spirit_type(class_raw: str | None, name: str = "") -> str | None:
     """The label's class statement → cellar.spirit_type. None when it is not whiskey at all."""
     t = f"{class_raw or ''} {name}".lower()
-    if re.search(r"vodka|\bgin\b|liqueur|\bcream\b|soda|tequila|\brum\b|brandy|\bbeer\b", t):
+    # "bourbon" in the *label class* rules out rye/blend; a maker's own name containing "Bourbon"
+    # (The Bardstown Bourbon Company) must not (a Bardstown Bourbon Company rye is still a rye).
+    class_says_bourbon = "bourbon" in (class_raw or "").lower()
+    # The label's own class says what's in the bottle; a cask that once held rum, tequila or brandy
+    # is a finish mentioned in the marketing name, not what's in this bottle (Widow Jane's "Tequila
+    # Ocho Cask Finish" bourbon, a hypothetical "Rum Cask Finish" rye).
+    if re.search(r"vodka|\bgin\b|liqueur|\bcream\b|soda|tequila|\brum\b|brandy|\bbeer\b", (class_raw or "").lower()):
         return None
     if re.search(r"\bblend", class_raw or "", re.I) and not re.search(r"blended (?:straight )?bourbon", class_raw or "", re.I):
         return "blend"  # the label calls it a blend, whatever it was blended from
@@ -67,11 +73,11 @@ def spirit_type(class_raw: str | None, name: str = "") -> str | None:
         return "tennessee"
     if re.search(r"\bwheat whisk", t):
         return "wheat_whiskey"
-    if re.search(r"\brye whisk|\brye\b(?! recipe| mash| bourbon)", t) and "bourbon" not in t:
+    if re.search(r"\brye whisk|\brye\b(?! recipe| mash| bourbon)", t) and not class_says_bourbon:
         return "rye"
-    if re.search(r"blend|blended", t) and "bourbon" not in t:
+    if re.search(r"blend|blended", t) and not class_says_bourbon:
         return "blend"
-    if "bourbon" in t:
+    if class_says_bourbon or "bourbon" in t:
         return "bourbon"
     if re.search(r"whisk|sour mash|corn", t):
         return "other"
