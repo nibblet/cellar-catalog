@@ -1,6 +1,6 @@
-"""altadisusa.com — WordPress (Altadis USA / Tabacalera USA: Montecristo, Romeo y Julieta, and 14
-other brands on one platform, each its own `cigar_product` post type). Scoped to Montecristo and
-Romeo y Julieta per the brand queue. Every line page states origin/wrapper/binder/filler as
+"""altadisusa.com — WordPress (Altadis USA / Tabacalera USA: Montecristo, Romeo y Julieta, H. Upmann,
+and 13 other brands on one platform, each its own `cigar_product` post type). Scoped to Montecristo,
+Romeo y Julieta and H. Upmann per the brand queue. Every line page states origin/wrapper/binder/filler as
 labelled "spec tiles", and sizes as a repeating "Name:" / "A x B" list — most pages give ring gauge
 first, length second (the reverse of most makers), but a few give length first, and one page mixes
 both orders on different rows; whichever number reads as a plausible ring gauge (a whole number in
@@ -19,7 +19,7 @@ DELAY = 5
 SITE = "https://www.altadisusa.com"
 SITEMAP = SITE + "/wp-sitemap-posts-cigar_product-1.xml"
 IMAGE_PREFIX = SITE + "/wp-content/uploads/"
-BRANDS = {"montecristo": "Montecristo", "romeo-y-julieta": "Romeo y Julieta"}
+BRANDS = {"montecristo": "Montecristo", "romeo-y-julieta": "Romeo y Julieta", "h-upmann": "H. Upmann"}
 
 # Origin states an adjective ("Nicaraguan") as often as a country name ("Nicaragua"), and adds a
 # factory aside either way round: "Nicaragua (Manufactured at Plasencia Nicaragua)" or
@@ -33,9 +33,46 @@ COUNTRIES = {"Nicaragua", "Dominican Republic", "Honduras", "Mexico", "Ecuador",
 LABELS = ("origin", "wrapper", "binder", "filler", "strength")
 DIMS = re.compile(r"(\d+(?:\.\d+)?)(?:\s+(\d)/(\d))?\s*x\s*(\d+(?:\.\d+)?)(?:\s+(\d)/(\d))?", re.I)
 
+# The site's own wp-sitemap 404s for stretches at a time (seen during the Montecristo/Romeo y
+# Julieta import and again for H. Upmann) while every individual product page keeps loading fine —
+# a CDN-cache issue, not a bot block. Last known-good sitemap listing for our three brands, used
+# only when the sitemap itself is unreachable.
+FALLBACK_URLS = [
+    SITE + p for p in (
+        "/cigars/h-upmann/h-upmann-1844-classic/", "/cigars/h-upmann/h-upmann-1844-reserve/",
+        "/cigars/h-upmann/h-upmann-aj-fernandez/", "/cigars/h-upmann/h-upmann-anejo/",
+        "/cigars/h-upmann/h-upmann-nicaragua-aj-fernandez-heritage/",
+        "/cigars/h-upmann/h-upmann-the-banker-daytrader/", "/cigars/h-upmann/h-upmann-the-banker/",
+        "/cigars/h-upmann/h-upmann-vintage-cameroon/",
+        "/cigars/montecristo/montecristo-1935-edition-diamante/", "/cigars/montecristo/montecristo-1935/",
+        "/cigars/montecristo/montecristo-classic-series/", "/cigars/montecristo/montecristo-epic-vintage-12/",
+        "/cigars/montecristo/montecristo-epic/", "/cigars/montecristo/montecristo-espada-oscuro/",
+        "/cigars/montecristo/montecristo-espada-signature-limited-edition/",
+        "/cigars/montecristo/montecristo-espada/", "/cigars/montecristo/montecristo-nicaragua-series/",
+        "/cigars/montecristo/montecristo-original/", "/cigars/montecristo/montecristo-platinum-series/",
+        "/cigars/montecristo/montecristo-white-series/", "/cigars/montecristo/montecristo_m/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-150th-anniversary/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-1875-by-ryj/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-1875-connecticut-nicaragua/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-1875-nicaragua/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-1875-reserve-maduro/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-1875/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-reserva-real-nicaragua-midnight-twist/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-reserva-real-nicaragua/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-reserva-real-twisted/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-reserva-real/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-reserve/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-romeo-by-romeo/",
+        "/cigars/romeo-y-julieta/romeo-y-julieta-vintage/",
+    )
+]
+
 
 def list_urls(fetcher) -> list[str]:
-    xml = fetcher.get(SITEMAP)
+    try:
+        xml = fetcher.get(SITEMAP)
+    except Exception:
+        return sorted(FALLBACK_URLS)
     urls = re.findall(r"<loc>([^<]+)</loc>", xml)
     return sorted(u for u in urls if any(f"/cigars/{b}/" in u for b in BRANDS))
 
@@ -94,10 +131,17 @@ def _unshout(text: str) -> str:
     return " ".join(w.title() if (w.isupper() and len(w) > 3) else w for w in text.split())
 
 
+# A page's own brand-prefix spelling occasionally drops the period's space ("H.Upmann The Banker
+# Daytrader" vs. every other H. Upmann page's "H. Upmann ___").
+BRAND_PREFIXES = {"H. Upmann": ("H. Upmann", "H.Upmann")}
+
+
 def _clean_line(title: str, brand: str) -> str | None:
     line = title
-    if line.lower().startswith(brand.lower()):
-        line = line[len(brand):].strip(" -–—:")
+    for prefix in BRAND_PREFIXES.get(brand, (brand,)):
+        if line.lower().startswith(prefix.lower()):
+            line = line[len(prefix):].strip(" -–—:")
+            break
     return _unshout(line) or None
 
 
