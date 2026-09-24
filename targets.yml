@@ -23,7 +23,7 @@ tier1:
   - {brand: Perdomo,            site: perdomocigars.com,  status: done,  note: "Squarespace; nine nav pages with a text section per wrapper; Estate Seleccion, Small Batch, Special Craft, Factory Tour Blend, Nick's Sticks are image galleries only"}
   - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
   - {brand: Ashton,             site: ashtoncigar.com,    status: done,    note: "also La Aroma de Cuba, one shared Drupal 7 template; San Cristobal (sancristobalcigar.com) blocked — 403s the crawler UA, browser UA gets 200"}
-  - {brand: Alec Bradley,       site: alecbradley.com,    status: todo}
+  - {brand: Alec Bradley,       site: alecbradley.com,    status: done,    note: "Nuxt 3 + Strapi; each page embeds its product record as JSON, no text-scraping. Fine & Rare's annual releases filed under one line via the page's own parent field. Country unstated site-wide, stays unknown"}
   - {brand: AJ Fernandez,       site: ajfcigars.com,      status: blocked, note: "age gate in front of every page"}
   - {brand: Joya de Nicaragua,  site: joyacigars.com,     status: todo}
   - {brand: Montecristo,        site: altadisusa.com,     status: todo,    note: "montecristo.com's TLS cert is expired; Altadis USA / Tabacalera USA now lives at altadisusa.com (WordPress, wp-sitemap-posts-cigar_product), also Romeo y Julieta, H. Upmann, 14 other brands"}
