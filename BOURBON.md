@@ -78,10 +78,10 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Angel's Envy (Bacardi) | angelsenvy.com | Angel's Envy |
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
-Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope done
-2026-09-24; Peerless and Wilderness Trail blocked (no machine-readable spec data); next: Smoke Wagon,
-Old Elk, Barrell, Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock,
-Heaven's Door, Yellowstone.
+Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
+Wagon done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next:
+Barrell, Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's
+Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -172,6 +172,15 @@ cigar line gone from its site.
 - A maker's site can have its own content-entry error: Penelope's Barrel Strength page has its proof
   sitting in the "Type & Process" field instead of "Proof". Read whichever field states the number rather
   than trusting the label, and don't assume every field means what its heading says.
+- A domain named after the brand can be a parked placeholder: smokewagonwhiskey.com is; the real site is
+  smokewagon.com. Check before concluding a site doesn't exist.
+- A site can be proud of *how* it makes proof without ever stating *what* the proof is: Old Elk markets
+  its "Slow Cut" proofing process at length on every page and gives a mash bill for exactly one product
+  (Wheat Whiskey), but no page states a number, confirmed in a rendered browser too. Blocked the same way
+  as Wilderness Trail — marketing prose with the actual figures held back, not a technical barrier.
+- A Squarespace or Wix nav "folder" page (a category landing with child pages under it, like Old Elk's
+  /lineup or /specialty-products) is often a bare shell with an intro paragraph and no per-product data;
+  the real content lives on the child pages the folder links to, not the folder page itself.
 - `normalize.age()`'s range detection required a lead verb ("aged", "matured"); a bare range with none
   ("4 - 6 Years Old") was falling through to the single-number pattern and returning the upper bound as
   if it were a specific age. Fixed to recognize a bare "N - N years" too. Re-verify every applied

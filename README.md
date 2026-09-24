@@ -104,6 +104,8 @@ rows to diff against over PostgREST.
 | unclenearest.com (bourbon) | done — 9 bottlings; proof in prose |
 | wildernesstraildistillery.com (bourbon) | blocked — no proof/age/mash text anywhere on the site |
 | shop.penelopebourbon.com (bourbon) | done — 20 bottlings; 'Bourbon Facts' spec block on the brand's own Shopify store |
+| smokewagon.com (bourbon) | done — 4 bottlings; low-yield, only Small Batch states a proof |
+| oldelk.com (bourbon) | blocked — no proof/age/mash text anywhere on the site or in a rendered browser |
 | us.davidoffgeneva.com | done — Davidoff, Avo, Camacho, Zino, Zino Platinum: 191 rows from BigCommerce custom fields + metafields via the store's own server action (6 requests, no page crawl). Origins for wrapper/binder/filler and a 0–5 intensity per product; country from an approved per-brand map |
 | myfathercigars.com | done — My Father, Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez: 130 sizes from 26 line pages (`<h3>Name L x R</h3>` under each cigar image). Blend line gives wrapper/binder/filler; "Handcrafted in …" gives country per page (three lines are USA or Honduras, not Nicaragua) |
 | rockypatel.com | done — Rocky Patel, Java, Nish Patel: 189 sizes from 42 line pages (a "Cigar Details" block in five formats). Country and mild/medium/full body from the maker's Honduran / Nicaraguan collection pages (its `cigar-category` taxonomy); wrapper/binder/filler from the block where stated, else from the page copy's "… wrapper" sentence, tobacco words only |
