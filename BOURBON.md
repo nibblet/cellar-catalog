@@ -79,8 +79,8 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight, Rabbit Hole done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no
-machine-readable spec data); next: Garrison Brothers, Castle & Key, Green River, Chicken Cock, Heaven's
+Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers done 2026-09-24; Peerless, Wilderness Trail,
+Old Elk blocked (no machine-readable spec data); next: Castle & Key, Green River, Chicken Cock, Heaven's
 Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
@@ -245,6 +245,22 @@ cigar line gone from its site.
   Barrel 2: 4 Mos") state no single age — `normalize.age()` already returns none for text shaped this
   way (the "+" breaks its numeric patterns), but the real lesson is not to add a special case to force
   a number out of it; a genuinely blended, unequal-age whiskey has no one age to report.
+- A maker can state age as two sequential stages with no single sentence adding them ("spent four years
+  in white American oak and four more in Pedro Ximénez sherry casks", "aged four years ... and aged an
+  additional year") — `normalize.age()` only ever returns the first number it finds. Garrison Brothers'
+  `_years()` sums every explicit "N years" mention, treats a bare "N more" as another mention of the
+  established unit (not a fresh, unrelated one), and treats an unquantified "an additional year" as +1;
+  this is deliberately its own module-local helper, not a `normalize.py` change, because the elliptical
+  phrasing is this one maker's writing style, not a general pattern.
+- A structured-data field can be stale on a page nothing else has changed on: Garrison Brothers' schema
+  said Cowboy Bourbon was 146.4 proof while this year's body copy said 141.0 — an annually-updated
+  release's *body text* is what changes each vintage, so read proof from there first and treat the
+  page's own JSON-LD as a fallback only, not the source of truth, whenever both exist.
+- A schema field can be a fixed site-wide default masquerading as a per-product fact: every Garrison
+  Brothers product's JSON-LD `category` reads "Texas Straight Bourbon Whiskey" verbatim, including ones
+  that would plausibly differ if the field were real. Sanity-check a structured field by comparing it
+  across several pages before trusting it; `isRelatedTo` ("Permanent Collection" / "Limited Release")
+  passed that check by matching the site's own separate "Our Babies" / "Limited Releases" nav split.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
