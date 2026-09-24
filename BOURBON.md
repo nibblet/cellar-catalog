@@ -79,8 +79,8 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next:
-Barrell, Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's
+Wagon, Barrell done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec
+data); next: Starlight, Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken Cock, Heaven's
 Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
@@ -185,6 +185,28 @@ cigar line gone from its site.
   ("4 - 6 Years Old") was falling through to the single-number pattern and returning the upper bound as
   if it were a specific age. Fixed to recognize a bare "N - N years" too. Re-verify every applied
   source's dry run after touching `normalize.py`, the same as for a `spirit_type()` change.
+- A page that lists the current release then its full batch history in one page (Barrell's Batch
+  Bourbon/Rye, New Year, Gold/Gray Label) has no toggle worth parsing — the current one is simply
+  whichever text comes before the *second* mention of "N proof" (a single-release page never has one).
+  A blend's own component list ("Kentucky: 12 years old", "Indiana: 5, 6, & 10 years old") states each
+  component's age, not the batch's; strip that whole span before age-matching or the first number in
+  the list reads as the batch's own age.
+- A page that states no proof/age/mash anywhere is still worth crawling if the family's other pages
+  are crawled: leaving it out doesn't skip it, it makes the importer think the maker stopped selling it
+  and mark it discontinued (the dry run's STALE list is scoped to "a family the site covers"). Crawl it,
+  let it parse to a proof-less record, and it confirms itself still-live instead (Barrell's Seagrass,
+  Dovetail, Vantage, Armida, Private Release and its Cask Finish Series landing page all do this).
+- `expression_key()`'s own boilerplate list strips the word "bourbon" (usually redundant — "10 Year
+  Bourbon" ~ "10 Year"), so a maker whose product is *named* "Bourbon" outright (Barrell's Batch Bourbon,
+  next to its blank-expression flagship blend) collides with the flagship's blank key and silently loses
+  the match in `_dedupe()` before diffing ever runs — no error, the record just vanishes. Give it a
+  distinguishing expression instead ("Batch Bourbon", the site's own nav term) and alias the old bare
+  name so the existing row still matches by name.
+- Two more real bugs, both narrow but both in shared `normalize.py` code, found by Barrell and
+  re-verified clean across all 20 previously-applied sources: `mash_style()`'s rye/corn percentage regex
+  only recognized "21% rye" order, not a maker who labels it "Rye: 21%"; and `finish()`'s "___ finish"
+  pattern mistook a product LINE's own name ("Cask Finish Series") for a real cask-finish descriptor —
+  a real single bottling never calls its own finish a "series".
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 

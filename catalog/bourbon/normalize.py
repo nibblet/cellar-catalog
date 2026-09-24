@@ -99,14 +99,15 @@ def mash_style(mash_raw: str | None, spirit: str | None, name: str = "") -> str 
         return "rye"
     if re.search(r"four[- ]grain", t):
         return "four_grain"
-    rye = re.search(r"(\d{1,2})\s*%\s*(?:winter\s+)?rye", t)
-    if re.search(r"wheat", t) and not re.search(r"\d{1,2}\s*%\s*rye", t):
+    # "21% rye" and "rye: 21%" both state the same figure; a maker's own label reads either way.
+    rye = re.search(r"(\d{1,2})\s*%\s*(?:winter\s+)?rye", t) or re.search(r"rye:?\s*(\d{1,2})\s*%", t)
+    if re.search(r"wheat", t) and not rye:
         return "wheated"
     if rye:
         return "high_rye" if int(rye.group(1)) >= 20 else "traditional"
     if re.search(r"high[- ]rye", t):
         return "high_rye"
-    if re.search(r"\d{1,2}\s*%\s*corn", t):
+    if re.search(r"\d{1,2}\s*%\s*corn", t) or re.search(r"corn:?\s*(\d{1,2})\s*%", t):
         return "traditional"
     return None
 
@@ -135,7 +136,10 @@ def flags(name: str, class_raw: str | None, proof_value: float | None) -> tuple[
 def finish(name: str, description: str | None = None) -> str | None:
     """'Finished in Port Casks' / 'Toasted Barrel Finish' / 'Double Oaked' as marketed; None when not a finished whiskey."""
     for t in (name, description or ""):
-        m = re.search(r"finished in ([\w' ]+?(?:cask|barrel)s?)", t, re.I) or re.search(r"([\w' ]+?(?:cask|barrel|oak)) finish(?:ed)?\b", t, re.I)
+        # "Cask Finish Series" as a product LINE's own name is not "finished in a cask" (Barrell's landing
+        # page for six different one-off casks); a real single bottling never calls its finish a "series".
+        m = re.search(r"finished in ([\w' ]+?(?:cask|barrel)s?)", t, re.I) \
+            or re.search(r"([\w' ]+?(?:cask|barrel|oak)) finish(?:ed)?\b(?!\s*series)", t, re.I)
         if m:
             return m.group(1).strip().title()
         if re.search(r"double oaked", t, re.I):
