@@ -12,6 +12,8 @@ own sites. One module per source; every row an importer touches gets `source = '
 - `catalog/sources/<maker>.py` — one parser per site.
 - `catalog/diff.py` — site records vs a catalog export → matched / corrections / additions / stale / aliases.
 - `catalog/write.py` — a diff → SQL. Emits statements; never connects.
+- `admin/` — local web UI for reviewing and fixing rows one at a time (see `admin/README.md`).
+  The one piece that writes directly, as a signed-in admin through row-level security.
 
 ## Running a source
 

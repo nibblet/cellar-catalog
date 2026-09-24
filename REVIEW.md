@@ -34,7 +34,9 @@ stamped `source_checked_at`, which is what keeps freshness at 100% for that sour
 
 ## 4. Audit sample (Paul, ~1 hour)
 
-Fifty rows, chosen at random, checked by eye against the maker's page in the in-app editor:
+Fifty rows, chosen at random, checked by eye against the maker's page. The admin UI's **Audit sample**
+queue (`admin/`) draws this sample, stable for the quarter, and records each result in `cellar.audit_checks`;
+the query below draws an equivalent sample by hand:
 
 ```sql
 (select id, name, brand, source_url from cellar.products
