@@ -79,9 +79,9 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no
-machine-readable spec data); next: Garrison Brothers, Rabbit Hole, Castle & Key, Green River, Chicken
-Cock, Heaven's Door, Yellowstone.
+Wagon, Barrell, Starlight, Rabbit Hole done 2026-09-24; Peerless, Wilderness Trail, Old Elk blocked (no
+machine-readable spec data); next: Garrison Brothers, Castle & Key, Green River, Chicken Cock, Heaven's
+Door, Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -228,6 +228,23 @@ cigar line gone from its site.
   distinctive enough to be certain, and rows with no current-site correspondence at all (one-off
   single-barrel picks, retired cask finishes) that are simply discontinued. Don't guess a merge from
   name similarity alone when a proof or a distinctive term isn't there to anchor it.
+- A brand's marketing domain can *be* its Shopify store rather than link to a separate one (Rabbit
+  Hole's shop subdomain redirects back to the main site) — crawl each product's own `.json` endpoint
+  directly (`SITEMAP` points at `/collections/all/products.json`) rather than scraping rendered HTML;
+  `body_html` carries the same accordion copy the page shows, paginated `&page=N` when a collection
+  holds more than the API's per-page cap.
+- A Shopify store's own `product_type` field is not a scope filter: Rabbit Hole tags Bespoke Gin and
+  Liddel Vodka as `"Whiskey"` alongside every real bourbon and rye. Scope from the source module's own
+  REFILE table, never from the platform's own categorization.
+- An alias must carry the family prefix the same as `name` does, not just the bare expression: pairing
+  `expression="Boxergrail"` with alias `"Boxergrail Rye"` (instead of `"Rabbit Hole Boxergrail Rye"`)
+  silently failed the name-match pass against the seed row of that exact title and would have inserted
+  a duplicate rather than correcting and renaming it — caught by reviewing the dry run's ADDITIONS
+  before writing SQL, not by any error.
+- Two whiskeys aged in casks of very different sizes with no aggregate figure ("Barrel 1: 4+ Yrs /
+  Barrel 2: 4 Mos") state no single age — `normalize.age()` already returns none for text shaped this
+  way (the "+" breaks its numeric patterns), but the real lesson is not to add a special case to force
+  a number out of it; a genuinely blended, unequal-age whiskey has no one age to report.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
