@@ -21,7 +21,7 @@ tier1:
   - {brand: Camacho,            site: us.davidoffgeneva.com, status: done,  note: "via the Davidoff importer; camachocigars.com could still add leaf names for older lines"}
   - {brand: Rocky Patel,        site: rockypatel.com,     status: done,  note: "one page per line, five size formats; country and body from the site's cigar-category taxonomy; wrapper from page copy on most lines; 8 pages list no sizes"}
   - {brand: Perdomo,            site: perdomocigars.com,  status: done,  note: "Squarespace; nine nav pages with a text section per wrapper; Estate Seleccion, Small Batch, Special Craft, Factory Tour Blend, Nick's Sticks are image galleries only"}
-  - {brand: Tatuaje,            site: tatuajecigars.com,  status: todo}
+  - {brand: Tatuaje,            site: tatuajecigars.com,  status: done,    note: "legacy static site, no CMS/sitemap; homepage smokes grid gives 19 pages; company catch-all brand covers Cabaiguan, La Riqueza, El Triunfador, Ambos Mundos, La Casita Criolla, Fausto, Havana VI, Seleccion de Cazador alongside core Tatuaje lines; Guapos Natural/Maduro split into two records"}
   - {brand: Ashton,             site: ashtoncigar.com,    status: done,    note: "also La Aroma de Cuba, one shared Drupal 7 template; San Cristobal (sancristobalcigar.com) blocked — 403s the crawler UA, browser UA gets 200"}
   - {brand: Alec Bradley,       site: alecbradley.com,    status: done,    note: "Nuxt 3 + Strapi; each page embeds its product record as JSON, no text-scraping. Fine & Rare's annual releases filed under one line via the page's own parent field. Country unstated site-wide, stays unknown"}
   - {brand: AJ Fernandez,       site: ajfcigars.com,      status: blocked, note: "age gate in front of every page"}
