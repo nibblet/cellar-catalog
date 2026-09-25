@@ -79,9 +79,9 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River, Heaven's Door done;
-Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next: Chicken Cock,
-Yellowstone.
+Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River, Heaven's Door,
+Chicken Cock done; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next:
+Yellowstone (the last one on this list).
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -304,6 +304,20 @@ cigar line gone from its site.
   from a page that's actually gone (Green River's vanished "U.S. Army 250th Anniversary"). Don't mark a
   seed row discontinued just because it wasn't crawled; that claims the maker no longer lists it, which a
   live-but-data-poor landing page doesn't support. Leave it as seed and say why in the write-up.
+- A host's WAF can specifically flag a *spoofed* browser User-Agent while accepting a plain or custom one
+  (Chicken Cock: a desktop-Chrome UA string gets 403, `curl`'s default, a bare "Mozilla/5.0", and a custom
+  identifying string all get 200) — the heuristic is "browser-claiming but non-browser-behaving," not
+  bot-blocking outright. `catalog/fetch.py`'s own UA already identifies itself rather than impersonating a
+  browser, so this needs no workaround, but it's a reason never to reach for UA-spoofing as a first fix
+  when a fetch fails; try the project's own honest UA before assuming a real bot wall.
+- A brand's newest releases can predate its own current page layout: Chicken Cock's structured
+  PROOF:/AGE:/MASHBILL: block only exists on the newer core lineup: older limited releases (Chanticleer,
+  the 15 Year, 20 Year Cotton Club Rye) still state proof only in inline prose and give no age field at
+  all. When a product's own name states its age plainly ("15-year-...", "20-year-old-...") and the page
+  doesn't, reading it from the slug or title is not a guess — it's the same fact the maker put in the URL.
+- A sold-out bottling ("Bottles Remaining | 0") is still the maker's current, standing statement of that
+  bottling's specs — proof/age/mash bill don't stop being confirmed facts just because the product can no
+  longer be bought; only a page that's gone entirely is grounds for treating a row as no longer listed.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
