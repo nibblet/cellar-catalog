@@ -10,7 +10,7 @@ Caches live in a scratch directory and are not kept between quarters, so each re
 fresh. Delays are per source and polite; the whole set runs in the background in under an hour.
 
 ```bash
-for s in drew_estate kristoff mayflower oliva nub hoyo punch cohiba cao macanudo partagas la_gloria_cubana padron arturo_fuente davidoff my_father rocky_patel perdomo diesel gurkha ashton alec_bradley altadis_usa joya_de_nicaragua tatuaje; do
+for s in drew_estate kristoff mayflower oliva nub hoyo punch cohiba cao macanudo partagas la_gloria_cubana padron arturo_fuente davidoff my_father rocky_patel perdomo diesel gurkha ashton alec_bradley altadis_usa joya_de_nicaragua tatuaje plasencia; do
   python3 scripts/crawl.py $s cache/$s
 done
 ```
