@@ -79,8 +79,8 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key done; Peerless, Wilderness Trail,
-Old Elk blocked (no machine-readable spec data); next: Green River, Chicken Cock, Heaven's Door,
+Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River done; Peerless,
+Wilderness Trail, Old Elk blocked (no machine-readable spec data); next: Chicken Cock, Heaven's Door,
 Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
@@ -275,6 +275,17 @@ cigar line gone from its site.
   from the description's own opening self-statement ("Our Rye is...", "Our Wheated Bourbon is...")
   rather than assuming a default, and watch for the OTHER type's name appearing incidentally in that
   same description (the wheated bourbon's own copy says "where rye would be" as a comparison).
+- A distillery site's real age statement can live on a separate FAQ page, not the product's own page
+  (Green River's flagship three state a fact like "aged more than five years" only there) — that page is
+  not read as the bottling's own statement; if the product page itself states no age, the row's existing
+  age stays untouched rather than being filled from a page a step removed from the product.
+- "Aging" (present participle) is not "aged": Green River's "After aging eight years in the distillery's
+  signature clay tile rickhouses" doesn't match any of `normalize.age()`'s "aged ..." patterns. A plain
+  text substitution (`aging` → `aged`) before calling it is enough when a maker's copy uses the -ing form.
+- A distiller can also be a contract supplier to other brands filed under their own family entirely
+  (Green River bottles for Bradshaw, Walker's Cay and New England Barrel Company, each its own
+  brand_family with `producer = 'Green River'`) — an importer scoped to the distiller's own site never
+  touches those rows, since family is what diff.py matches on, not producer.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
