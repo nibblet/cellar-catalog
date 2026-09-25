@@ -79,9 +79,9 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers done 2026-09-24; Peerless, Wilderness Trail,
-Old Elk blocked (no machine-readable spec data); next: Castle & Key, Green River, Chicken Cock, Heaven's
-Door, Yellowstone.
+Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key done; Peerless, Wilderness Trail,
+Old Elk blocked (no machine-readable spec data); next: Green River, Chicken Cock, Heaven's Door,
+Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -261,6 +261,20 @@ cigar line gone from its site.
   that would plausibly differ if the field were real. Sanity-check a structured field by comparing it
   across several pages before trusting it; `isRelatedTo` ("Permanent Collection" / "Limited Release")
   passed that check by matching the site's own separate "Our Babies" / "Limited Releases" nav split.
+- A Shopify store's `.json` product API is not always the whole page: Castle & Key's `body_html` carries
+  the marketing description and its "Aged for N years" statement, but proof and mash bill live only in
+  the rendered page's theme-built "Tasting Notes" accordion, never in the JSON payload at all — crawl
+  the rendered HTML when a fact the JSON promises turns out to live in the theme instead.
+- A mash bill printed in abbreviated codes with no on-site legend (Castle & Key's "73% WC, 10% R, 17%
+  MB") still needs expanding to spelled-out grain words before `normalize.mash_style()` can read it (it
+  only recognizes "corn"/"rye"/"wheat"/"malted barley", never a maker's own shorthand) — infer the
+  legend from standard bourbon/rye convention (WC/YC both corn, R rye, W wheat, MB malted barley) and
+  say so as inference, not as something the site states.
+- A release can name neither bourbon nor rye in its own title (Castle & Key's Experimental Series
+  "Hungarian Tokaji Casks") when the base spirit isn't part of the marketing name at all; read the class
+  from the description's own opening self-statement ("Our Rye is...", "Our Wheated Bourbon is...")
+  rather than assuming a default, and watch for the OTHER type's name appearing incidentally in that
+  same description (the wheated bourbon's own copy says "where rye would be" as a comparison).
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
