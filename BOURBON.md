@@ -80,8 +80,10 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
 Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River, Heaven's Door,
-Chicken Cock done; Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next:
-Yellowstone (the last one on this list).
+Chicken Cock, Yellowstone done 2026-09-25 — **Tier 2 queue complete**. Peerless, Wilderness Trail, Old
+Elk remain blocked (no machine-readable spec data). Next: pick 3–5 new Tier 2/3 producers from the
+catalog's own brand list (ranked by presence, same method `targets.yml`'s header describes), or start
+Phase 2 (TTB COLA) below.
 
 The queue lives in `targets.yml` under `bourbon:`.
 
@@ -318,6 +320,24 @@ cigar line gone from its site.
 - A sold-out bottling ("Bottles Remaining | 0") is still the maker's current, standing statement of that
   bottling's specs — proof/age/mash bill don't stop being confirmed facts just because the product can no
   longer be bought; only a page that's gone entirely is grounds for treating a row as no longer listed.
+- A page can flatly contradict itself: Yellowstone's Single Barrel states "Bottled-in-Bond" (legally
+  exactly 100 proof) while displaying "93 Proof" a paragraph later — clearly copy-pasted from a sibling
+  page. The label's own legal claim (BiB, a federal definition) wins over its own displayed number, the
+  same call made for Barton 1792's Full Proof; don't average or split the difference between two
+  contradictory maker statements when one of them is independently verifiable by law.
+- An elliptical component-age list ("a perfect blend of 4- and 7-year bourbons") states two ages with no
+  aggregate, but the ellipsis ("4-" with "year" only attached to the second number) means a naive
+  extraction only ever finds the *second* number and reports it as if it were the whole story — worse
+  than finding neither, since it looks like a real answer. Strip the whole "N- and N-year" span before
+  calling `age()` rather than trust whichever half survives the parse.
+- `og:image` can be a fixed site-wide default (Yellowstone's is the same logo on every single product
+  page) even when the page has a real, distinct bottle photo elsewhere in the DOM — check that an
+  og:image actually varies page to page before trusting it; when it doesn't, find the maker's own image
+  folder convention instead (`imgs/bottles/<name>` here) and take the first match.
+- An annually-overwritten page can have a same-year dated mirror URL that means nothing archivally
+  (Yellowstone's `/limited-edition-25/` duplicates `/limited-edition/` for the current cycle only; every
+  guessed past year's URL 404s) — don't infer a historical-batch-archive pattern from one dated URL
+  existing; check whether prior years' guesses actually resolve before assuming the pattern is real.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
