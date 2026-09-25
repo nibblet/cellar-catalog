@@ -79,8 +79,8 @@ Read the dry run, apply `part1.sql` then each `inserts_N.sql`, re-run the scorec
 | Jefferson's | jeffersonsbourbon.com | Jefferson's |
 
 Tier 2 (Q1 2027): Willett, New Riff, Bardstown Bourbon Co, Widow Jane, Uncle Nearest, Penelope, Smoke
-Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River done; Peerless,
-Wilderness Trail, Old Elk blocked (no machine-readable spec data); next: Chicken Cock, Heaven's Door,
+Wagon, Barrell, Starlight, Rabbit Hole, Garrison Brothers, Castle & Key, Green River, Heaven's Door done;
+Peerless, Wilderness Trail, Old Elk blocked (no machine-readable spec data); next: Chicken Cock,
 Yellowstone.
 
 The queue lives in `targets.yml` under `bourbon:`.
@@ -286,6 +286,24 @@ cigar line gone from its site.
   (Green River bottles for Bradshaw, Walker's Cay and New England Barrel Company, each its own
   brand_family with `producer = 'Green River'`) — an importer scoped to the distiller's own site never
   touches those rows, since family is what diff.py matches on, not producer.
+- A brand can fully rebrand its lineup (Heaven's Door: every core expression now carries a mythic release
+  name — Refuge, Revival, Ascension, Revelation — over its old plain descriptive class) after the seed
+  was written under the old names. Keep the old descriptive expression in `REFILE` and alias the new
+  release name (or vice versa, whichever the seed already used) rather than adopting the new marketing
+  name outright — the point is matching the existing row, not chasing the current brand voice.
+- The Barrell "bare Bourbon collides with the flagship's blank expression" bug recurs anywhere a state or
+  region name sits next to the word "Bourbon": Heaven's Door's "Kentucky Bourbon" and "Tennessee Bourbon"
+  both strip to an empty `expression_key()` (`kentucky`, `tennessee` and `bourbon` are all in the
+  boilerplate list) and collided in `_dedupe()` exactly like before, silently dropping one before
+  matching ever ran. Renaming to "KY Straight Bourbon" / "TN Straight Bourbon" survives stripping via the
+  untouched abbreviation. Whenever an expression is built from state/region + "Bourbon" alone, check its
+  `expression_key()` isn't empty before trusting the dry run's silence about it.
+- A collection/series landing page can be genuinely live (200, linked from nav, not a dead redirect) while
+  still stating no proof anywhere in static text for its individual numbered releases (Heaven's Door's
+  Bootleg Series, Decade Series, Exploration Series, Master Blender's Edition) — this is a different case
+  from a page that's actually gone (Green River's vanished "U.S. Army 250th Anniversary"). Don't mark a
+  seed row discontinued just because it wasn't crawled; that claims the maker no longer lists it, which a
+  live-but-data-poor landing page doesn't support. Leave it as seed and say why in the write-up.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
