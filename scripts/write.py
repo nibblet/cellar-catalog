@@ -47,8 +47,11 @@ for e in rep.additions:
                  "wl": e["leaf"] if e["leaf"] != "other" else "unknown", "wo": e["origin"], "ws": e["shade"], "bd": e["body"],
                  "bi": e["binder"], "fi": e["filler"], "c": e.get("country") or country, "img": e["size_image"] or e["band"], "u": e["source_url"]})
 maker_sql = f"'{a.maker}'::uuid" if a.maker else "null"
+# image_url stays null: the crawled address is the maker's, not ours to display, and not ours
+# to rely on. It is kept in specs as source_image_url — see catalog/write.py._source_image.
 head = ("insert into cellar.products (type, name, brand, line, expression, length_in, ring_gauge, shape, box_pressed, wrapper_leaf, wrapper_origin, wrapper_shade, body, strength, binder, filler, country, producer_id, image_url, source, source_url, source_checked_at, status, catalog_included, specs)\n"
-        f"select 'cigar', r.n, r.b, r.l, r.x, r.len, r.rg, r.sh::cellar.cigar_shape, r.bp, r.wl::cellar.wrapper_leaf, r.wo, r.ws::cellar.wrapper_shade, r.bd::cellar.cigar_strength, r.bd::cellar.cigar_strength, r.bi, r.fi, r.c, {maker_sql}, r.img, 'maker', r.u, now(), 'confirmed', true, '{{}}'::jsonb\n"
+        f"select 'cigar', r.n, r.b, r.l, r.x, r.len, r.rg, r.sh::cellar.cigar_shape, r.bp, r.wl::cellar.wrapper_leaf, r.wo, r.ws::cellar.wrapper_shade, r.bd::cellar.cigar_strength, r.bd::cellar.cigar_strength, r.bi, r.fi, r.c, {maker_sql}, null, 'maker', r.u, now(), 'confirmed', true,\n"
+        "       case when r.img is null then '{{}}'::jsonb else jsonb_build_object('source_image_url', r.img) end\n"
         "from jsonb_to_recordset($j$")
 tail = "$j$::jsonb) as r(n text, b text, l text, x text, len numeric, rg int, sh text, bp bool, wl text, wo text, ws text, bd text, bi text, fi text, c text, img text, u text);"
 for i in range(0, len(rows), 45):

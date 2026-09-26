@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from ..write import q
+from ..write import _source_image, q
 from .diff import Report
 
 import re
@@ -32,10 +32,14 @@ def _row(f: dict, producer: str | None, maker_id: str | None, rarity: list[tuple
 
 def insert_batches(additions: list[dict], *, producer: str | None, maker_id: str | None, rarity: list[tuple[str, str]] = (), by_family: dict | None = None, size: int = 40) -> list[str]:
     rows = [_row(f, producer, maker_id, rarity, by_family) for f in additions if f["proof"] is not None]  # no proof on the maker's page: reported, not added
+    # image_url stays null and the maker's address goes to specs->>'source_image_url'; see
+    # catalog/write.py._source_image for why.
     head = (f"insert into cellar.products ({INSERT_COLS})\n"
-            "select 'bourbon', 'confirmed', 'maker', '{}'::jsonb, r.n, r.f, r.f, r.x, r.pr, r.mk::uuid, r.p, r.ay, r.al, r.nas, "
+            "select 'bourbon', 'confirmed', 'maker', "
+            "case when r.img is null then '{}'::jsonb else jsonb_build_object('source_image_url', r.img) end, "
+            "r.n, r.f, r.f, r.x, r.pr, r.mk::uuid, r.p, r.ay, r.al, r.nas, "
             "r.et::cellar.expression_type, r.ms::cellar.mash_style, r.mb, r.st::cellar.spirit_type, r.bib, r.bp, r.fin, r.msrp, r.core, "
-            "true, coalesce(r.al2, '{}'::text[]), r.img, r.u, now(), r.rar::cellar.rarity\n"
+            "true, coalesce(r.al2, '{}'::text[]), null, r.u, now(), r.rar::cellar.rarity\n"
             "from jsonb_to_recordset($j$")
     tail = ("$j$::jsonb) as r(n text, f text, x text, p numeric, ay numeric, al text, nas bool, et text, ms text, mb text, st text, "
             "bib bool, bp bool, fin text, msrp numeric, core bool, al2 text[], img text, u text, pr text, mk text, rar text)\n"
@@ -61,7 +65,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             "barrel_proof = true" if "barrel_proof" in d else None,
             f"finish = {q(f['finish'])}" if "finish" in d else None,
             f"msrp_usd = {q(f['msrp'])}" if "msrp_usd" in d else None,
-            f"image_url = coalesce(image_url, {q(f['image'])})" if "image" in d else None,
+            _source_image(q, f["image"]) if "image" in d else None,
             f"name = {q(f['name'])}, expression = {q(f['expression'])}, "
             f"aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(f['catalog_name'])})) a)" if "name" in d else None,
             f"producer = coalesce(producer, {q(producer)})" if producer else None,
@@ -85,14 +89,9 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
         if maker_id:
             sets.append(f"producer_id = coalesce(producer_id, {q(maker_id)}::uuid)")
         if f["image"]:
-            sets.append(f"image_url = coalesce(image_url, {q(f['image'])})")
+            sets.append(_source_image(q, f["image"]))
         out.append(f"update cellar.products set {', '.join(sets)} where id = {q(f['id'])} and facts_verified_at is null;")
     if rep.stale:
         out.append(f"update cellar.products set discontinued = true where id in ({', '.join(q(r['id']) for r in rep.stale)});")
-    out.append(
-        "insert into cellar.product_images (product_id, image_url, is_hero) "
-        "select p.id, p.image_url, true from cellar.products p "
-        f"where p.type = 'bourbon' and p.source = 'maker' and p.image_url like {q(image_prefix + '%')} "
-        "and not exists (select 1 from cellar.product_images i where i.product_id = p.id);"
-    )
+    # No hero-image backfill; see the note in catalog/write.py.
     return out

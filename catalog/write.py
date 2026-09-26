@@ -15,6 +15,28 @@ def q(v) -> str:
     return "'" + str(v).replace("'", "''") + "'"
 
 
+def _source_image(q, url: str | None) -> str | None:
+    """Record where the maker's artwork lives, without displaying it.
+
+    We used to write the crawled address straight into image_url. Two things were wrong with
+    that: we hold no licence to show a maker's photography in a paid app, and the URL is theirs
+    to change, so artwork could break in the shipped app with no change on our side. The address
+    is still worth keeping — it is where to fetch from if we ever license or re-host — so it goes
+    into specs under source_image_url and image_url is left alone.
+    """
+    if not url:
+        return None
+    return ("specs = coalesce(specs, '{}'::jsonb) || "
+            f"jsonb_build_object('source_image_url', {q(url)})")
+
+
+def _source_image_specs(q, url: str | None) -> str:
+    """The same thing for an insert, where specs is built rather than merged."""
+    if not url:
+        return "'{}'::jsonb"
+    return f"jsonb_build_object('source_image_url', {q(url)})"
+
+
 def _name(brand: str, line: str | None, size: str, series_brands: set[str]) -> str:
     # Catalog convention: name = line + size, without the brand. For series-style brands
     # (ACID Blue / Blondie) the size *is* the product name.
@@ -48,7 +70,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
             f"body = coalesce({q(e['body'])}, body)", f"strength = coalesce(strength, {q(e['body'])})",
             f"binder = coalesce({q(e['binder'])}, binder)", f"filler = coalesce({q(e['filler'])}, filler)",
             f"expression = {q(e['size'])}",
-            f"image_url = coalesce(image_url, {q(e['size_image'] or e['band'])})",
+            _source_image(q, e["size_image"] or e["band"]),
             f"source = 'maker'", f"source_url = {q(e['source_url'])}", "source_checked_at = now()",
             f"country = coalesce(country, {q(e['country'] or country_by_brand.get(e['brand']))})" if (e.get("country") or country_by_brand.get(e["brand"])) else None,
         ]
@@ -74,7 +96,7 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
                 q(float(length)) if length != "None" else "null", q(int(ring)) if ring != "None" else "null", q(shp), q(box),
                 q(e["leaf"] if e["leaf"] != "other" else "unknown"), q(e["origin"]), q(e["shade"]), q(e["body"]), q(e["body"]),
                 q(e["binder"]), q(e["filler"]), q(country), q(maker_id),
-                q(e["size_image"] or e["band"]), "'maker'", q(e["source_url"]), "now()", "'confirmed'", "true", "'{}'::jsonb",
+                "null", "'maker'", q(e["source_url"]), "now()", "'confirmed'", "true", _source_image_specs(q, e["size_image"] or e["band"]),
             ]) + ");"
         )
 
@@ -94,11 +116,8 @@ def statements(rep: Report, *, maker_id: str | None, country_by_brand: dict[str,
         ids = ", ".join(q(r["id"]) for r in rep.stale)
         out.append(f"update cellar.products set discontinued = true where id in ({ids});")
 
-    # Hero images for anything that now has a site image and no product_images row.
-    out.append(
-        "insert into cellar.product_images (product_id, image_url, is_hero) "
-        "select p.id, p.image_url, true from cellar.products p "
-        f"where p.type = 'cigar' and p.source = 'maker' and p.image_url like {q(image_prefix + '%')} "
-        "and not exists (select 1 from cellar.product_images i where i.product_id = p.id);"
-    )
+    # No hero-image backfill. product_images used to be populated straight from the maker's own
+    # URL; we do not hold the rights to display those and do not control the URL either, so the
+    # crawled address is kept in specs->>'source_image_url' as a place to fetch from if we ever
+    # license or re-host it. See sql/20260926_drop_hotlinked_images.sql.
     return out
