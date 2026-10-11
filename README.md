@@ -127,6 +127,9 @@ rows to diff against over PostgREST.
 | stellum.com, 2xowhiskey.com (bourbon) | done — proof read by hand from the maker's own bottle-label photos (Stellum 7 of 9 rows, 2XO American Oak) |
 | jeffersonsbourbon.com (bourbon) | done, hand-read — the host blocks the importer; four pages read in the app's browser pane with the owner's approval and cached by hand (cache/jef is committed) |
 | bluegrassdistillers.com, asmithbowman.com (bourbon) | done — 8 / 29 rows; Bowman is 21 historical Abraham Bowman releases plus the core line |
+| shortbarrelbourbon.com, whistlepigwhiskey.com, rd1spirits.com, hardtruth.com, bluenotebourbon.com (bourbon) | done — 10 / 14 / 6 / 30 / 11 rows |
+| luckysevenspirits.com, lexingtonbrewingco.com (Town Branch), boonedistilling.com, horsesoldierbourbon.com, hkyoungbourbon.com (bourbon) | done — 11 / 14 / 11 / 10 / 3 rows |
+| drinkmhs.com (Fireside) (bourbon) | done — 13 bottlings from the catalogue array in the site's public JS bundle (every URL serves one empty SPA shell) |
 | smoothambler.com, driftlessglen.com, jeffersonsbourbon.com, kentuckyowl.com, stellum.com, 2xowhiskey.com (bourbon) | blocked or no proof stated — see targets.yml |
 | us.davidoffgeneva.com | done — Davidoff, Avo, Camacho, Zino, Zino Platinum: 191 rows from BigCommerce custom fields + metafields via the store's own server action (6 requests, no page crawl). Origins for wrapper/binder/filler and a 0–5 intensity per product; country from an approved per-brand map |
 | myfathercigars.com | done — My Father, Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez: 130 sizes from 26 line pages (`<h3>Name L x R</h3>` under each cigar image). Blend line gives wrapper/binder/filler; "Handcrafted in …" gives country per page (three lines are USA or Honduras, not Nicaragua) |

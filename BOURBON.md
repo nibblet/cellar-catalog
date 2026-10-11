@@ -402,6 +402,36 @@ cigar line gone from its site.
   that to rows matched by earlier runs and promoted 67 core rows; maker rows still hidden are the ones their modules
   call non-core (limited, anniversary, experimental), on purpose.
 
+- A single-page app can hide its whole catalogue in one public JS bundle (Fireside's drinkmhs.com: every URL serves
+  the same empty shell, the products are a literal array in `/assets/index-<hash>.js`): crawl the home page for the
+  bundle name, then the bundle, and parse the array. Check for this before concluding "no machine-readable data".
+- Two page families can describe one bottle (WhistlePig's `/whiskeys/` and `/product/`; Lucky Seven's collection and
+  store pages): pick the complete one or merge them in module state, since the diff keeps the last record per bottling.
+- `key()` cuts at "(" and `expression_key()` drops digits, so "X (5 Year)", "X (7 Year)" and "X (8 Years)" collide and the
+  matcher cannot claim a specific one: add the maker's row and merge the exact-match child with `cellar.merge_product`.
+- Twins with one `expression_key` ("Honey Cask Rye" / "Honey Rye Cask") and a unique index on (family, expression,
+  release_label) mean a writer rename can hit a live twin: merge twins first, then run the writer.
+- A seeded age the maker contradicts or never states survives the writer (it only fills an empty age): the dry run does
+  not list it, so list those by hand (H.K. Young's blend, Town Branch's flagship, Horse Soldier's flagship, Shortbarrel
+  Four Grain) for an owner NAS/clear decision.
+- Matched rows keep `status = 'draft'` even when the writer sets `source = 'maker'` (264 rows on 2026-10-12): the
+  scorecard and the app don't read it, but check the catalog-management UI before deciding whether the writer should
+  also set `status = 'confirmed'`.
+- A brand that is only a label (O.K.I., Blackened) has no maker site: its domain 301s to a social page or a retailer, or
+  sits parked. Check redirects without `-L`, report it blocked, and settle it through TTB COLA (Phase 2).
+- A brand's own-name domain can be a different business entirely (townbranch.com is an apartment complex): follow the
+  old domain's redirect and check the page content.
+
+## Open owner decisions (2026-10-12)
+- Seeded ages the maker doesn't state: H.K. Young Toasted Barrel Blend (6 vs "7 - 8"), Horse Soldier flagship (4 from
+  "small batches of 4 year old bourbon"), Shortbarrel Four Grain (4 vs "four-to-five-year-old"), Town Branch flagship
+  (4 vs non-age-stated), Hard Truth Four Grain / Wheated (5), Blue Note Special Reserve (9.59 vs "4–19 Years") and Honey
+  Bourbon / Honey Rye (3).
+- Eighteen33 (Boone County, two MGP seed rows, 115.4 proof) probably retired; Town Branch Reserve Rye probably a duplicate of
+  Single Barrel Reserve Rye; O.K.I. rows' producer should be OKI Spirits LLC; Fireside Single Barrel (4 yr) is core but not
+  on the maker's site; the Peerless Straight Bourbon (109.8) vs Small Batch Barrel Proof (109.5) pair; whether to set
+  `status = 'confirmed'` on maker rows; 67 older matched core rows were promoted, ~134 non-core maker rows stay hidden.
+
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
 The COLA public registry holds every approved label: brand, class/type, proof, age statement,
