@@ -100,11 +100,11 @@ def mash_style(mash_raw: str | None, spirit: str | None, name: str = "") -> str 
     if re.search(r"four[- ]grain", t):
         return "four_grain"
     # "21% rye" and "rye: 21%" both state the same figure; a maker's own label reads either way.
-    rye = re.search(r"(\d{1,2})\s*%\s*(?:winter\s+)?rye", t) or re.search(r"rye:?\s*(\d{1,2})\s*%", t)
+    rye = re.search(r"(\d{1,2}(?:\.\d+)?)\s*%\s*(?:winter\s+)?rye", t) or re.search(r"rye:?\s*(\d{1,2}(?:\.\d+)?)\s*%", t)
     if re.search(r"wheat", t) and not rye:
         return "wheated"
     if rye:
-        return "high_rye" if int(rye.group(1)) >= 20 else "traditional"
+        return "high_rye" if float(rye.group(1)) >= 20 else "traditional"
     if re.search(r"high[- ]rye", t):
         return "high_rye"
     if re.search(r"\d{1,2}\s*%\s*corn", t) or re.search(r"corn:?\s*(\d{1,2})\s*%", t):
