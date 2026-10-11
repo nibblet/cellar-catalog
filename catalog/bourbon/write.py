@@ -82,7 +82,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             f"aliases = (select array_agg(distinct a) from unnest(array_append(aliases, {q(f['catalog_name'])})) a)" if "name" in d else None,
             f"producer = coalesce(producer, {q(producer)})" if producer else None,
             f"producer_id = coalesce(producer_id, {q(maker_id)}::uuid)" if maker_id else None,
-            "source = 'maker'" if f["proof"] is not None else None,  # a page that states no proof confirms nothing
+            "source = 'maker', status = 'confirmed'" if f["proof"] is not None else None,  # a page that states no proof confirms nothing
             f"source_url = {q(f['source_url'])}", "source_checked_at = now()", "discontinued = false",
             *_promote(f),
             *_rarity(f, rarity),
@@ -96,7 +96,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
         producer, maker_id = (by_family or {}).get(f["family"], default)
         sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", *_promote(f), *_rarity(f, rarity)]  # the maker lists it
         if f["proof"] is not None:
-            sets.insert(0, "source = 'maker'")  # confirmed only when the page states the proof
+            sets.insert(0, "source = 'maker', status = 'confirmed'")  # confirmed only when the page states the proof
         if producer:
             sets.append(f"producer = coalesce(producer, {q(producer)})")
         if maker_id:

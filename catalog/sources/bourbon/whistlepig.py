@@ -118,6 +118,8 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     ranged = re.search(r"between\s+\d{2,3}(?:\.\d+)?\s+and\s+\d{2,3}(?:\.\d+)?\s+proof", own, re.I)
     found = tile or (None if ranged else prose)
     proof = float(found.group(1)) if found else None
+    if proof is None and path == "whiskeys/beyond-bonded-bourbon":
+        proof = 100.0  # Bottled in Bond is 100 proof by law; the page prints none. Owner-approved reading, 2026-10-12.
 
     years, label = None, None
     am = re.search(r"(\d{1,2})\s*yrs?\s*\|?\s*aged", own, re.I)

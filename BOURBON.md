@@ -414,9 +414,8 @@ cigar line gone from its site.
 - A seeded age the maker contradicts or never states survives the writer (it only fills an empty age): the dry run does
   not list it, so list those by hand (H.K. Young's blend, Town Branch's flagship, Horse Soldier's flagship, Shortbarrel
   Four Grain) for an owner NAS/clear decision.
-- Matched rows keep `status = 'draft'` even when the writer sets `source = 'maker'` (264 rows on 2026-10-12): the
-  scorecard and the app don't read it, but check the catalog-management UI before deciding whether the writer should
-  also set `status = 'confirmed'`.
+- Matched rows used to keep `status = 'draft'` when the writer set `source = 'maker'` (264 rows on 2026-10-12). The admin
+  UI treats `draft` as its review queue, so the writer now sets `status = 'confirmed'` with `source = 'maker'`.
 - A brand that is only a label (O.K.I., Blackened) has no maker site: its domain 301s to a social page or a retailer, or
   sits parked. Check redirects without `-L`, report it blocked, and settle it through TTB COLA (Phase 2).
 - A brand's own-name domain can be a different business entirely (townbranch.com is an apartment complex): follow the
@@ -428,11 +427,12 @@ Blend, Horse Soldier, Shortbarrel Four Grain, Town Branch, Hard Truth Four Grain
 Honey casks); the two Eighteen33 rows flagged discontinued; Town Branch Reserve Rye merged into Single Barrel Reserve Rye; O.K.I.
 producer and maker now OKI Spirits LLC; Fireside Single Barrel (4 yr) no longer core.
 
-Still open: Hard Truth's other seeded ages the maker never states (Chocolate, Caramel and Malted Rye 2, French Oak Harvest Rye 3,
-Double Oaked Sweet Mash Rye 5, Maple Brulee 4, the flagship 'Hard Truth' 14); the Peerless Straight Bourbon (109.8) vs Small Batch
-Barrel Proof (109.5) pair; whether the writer should also set `status = 'confirmed'` on maker rows (264 still 'draft'; check the
-catalog-management UI first); WhistlePig Beyond Bonded Bourbon (BiB, no proof printed — read as 100?); ~134 non-core maker rows
-stay hidden on purpose.
+Also applied (`sql/20261012_beyond_bonded_ages_status.sql`): WhistlePig Beyond Bonded Bourbon read as 100 proof (Bottled in Bond
+by law; the module sets it, owner-approved); seven more Hard Truth seeded ages cleared (the flagship's 14, Double Oaked Sweet Mash Rye,
+Chocolate/Caramel/Malted Rye, French Oak Harvest Rye, Maple Brulee); every maker row with a stated proof is now `status = 'confirmed'`
+(the admin UI's review queue is `status = 'draft'`), and the writer sets that on every confirmation.
+
+Still open: the Peerless Straight Bourbon (109.8) vs Small Batch Barrel Proof (109.5) pair; ~134 non-core maker rows stay hidden on purpose.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
