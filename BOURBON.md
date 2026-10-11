@@ -452,6 +452,46 @@ Journeyman, Boundary Oak):
 - A trigger (`cellar.protect_verified_facts`) rejects a fact change on a verified row unless `facts_verified_at` moves too, which
   is the intended route for an explicit owner change; an importer never does it (its updates all say `facts_verified_at is null`).
 
+Third demand-ranked batch (2026-10-13: Henry McKenna, On Your Six, Burks Spring, The Morning Glory, Chattanooga, Westward, Wyoming,
+Two Souls, Three Chord, Copperworks, Frey Ranch, Milam & Greene, Still Austin; blocked: Trackside, Distiller's Cache, Flatboat,
+Buckner's, Middle West):
+
+- The writer inserts every addition as browsable and promotes every matched core row, so a module should parse only the seeded
+  bottlings plus the standing lineup: a limited release with no seed would go live, and the three big craft makers list far more
+  limited releases than the catalog holds. Matched non-core rows get maker provenance and stay hidden. `_promote` also makes a
+  matched core row browsable when its page states no proof (Frey Farm Strength Uncut Bourbon): mark such a row non-core.
+- Floors are not ages, even in a structured field: "Greater than N years" (Chattanooga's `Age:` field), "just under", "more than"
+  and "over N years" (Copperworks) state nothing. An exact "N years, M months" is years + M/12 to two decimals, which is how the
+  seeds were computed (and corrected a few whole-number seeds). Component lists, finishing stages and targets are never read.
+- A page that lists a seasonal series with a floor that changes each release (Still Austin Bottled in Bond) is one row per type,
+  100 proof by the definition, with no age.
+- Server-side age gates versus overlays: check the flattened text length before deciding. Middle West serves a 136-character
+  gate on every URL (a block to report); WordPress, Webflow, Squarespace and Wix overlays leave the copy in the static HTML
+  (Frey, Still Austin, Wyoming, Chattanooga, Journeyman, Trackside), and Shopify `/products/<handle>.json` bypasses nothing.
+- A seed in the owner's collection can be a store or barrel pick filed under the flagship's expression (Morning Glory's Office
+  Cigar Lounge pick, Distiller's Cache's Total Wine pick): read `specs.additional_notes` before letting a maker page correct it. A
+  Bottled-in-Bond page (exactly 100) never matches a 109-proof seed, so it is inserted as its own row and the owner decides
+  the merge. `diff.py` pass 4 (one site record plus one catalog row in the family) matches regardless of proof, and `export.py` drops
+  non-included seeds, so look at the whole family in the database before trusting a pass-4 match.
+- Parked domains answer 200 with a body that is a script redirect to `/lander` (GoDaddy, Afternic); a 301 to a domain with no DNS
+  also means no site. A review page's "Official Website" link is the fastest route to the real domain (Trackside, K.Luke), and a
+  brand can be a trademark of another distillery (Distiller's Cache belongs to Ugly Dog), so the real site carries it only in a menu.
+- A launch press release on the maker's own domain can be the only place a small brand states its proof (Burks Spring); articles
+  reposted on its news page are not the maker's words, so their Bottled-in-Bond, age and mash figures are not read.
+- Square Online pages have no product body in the DOM, but `og:description` (HTML-escaped twice) holds the full description and
+  `og:image` varies per product. A Shopify bottler's "Nerdy Bits" block gives proof, exact age and mash bill: match seeds to
+  pages on those figures and keep the seed's own names. A page that prints only "ABV: 47.0%" gives proof 2 x ABV: read an explicit
+  "Proof: N" first, then the last "N proof", then ABV (a page can quote a sibling's strength).
+- `normalize` quirks: `mash_style()` does not read "22% malted rye" (a word between the percent and "rye") and reads "100% Rye
+  Malt" or "100% Corn" as "00%", so set `mash_style` on the record or write "100% Malted Rye"; `spirit_type()` reads the name as well as
+  the class ("Two Malts Rye" reads as rye) and "blend" in `class_raw` sends a straight bourbon blend to blend: keep the style word
+  out of the class (the High West lesson).
+- An owner-verified row cannot be confirmed by an importer, so its correction stays listed as "[verified - will be skipped]" on
+  every re-run. A fact change on a verified row needs `facts_verified_at` to move (the trigger guards fact columns only); changing
+  `source`, `status` or `source_url` does not.
+- `cellar.merge_product` copies a child's member saves to the parent and leaves the child's own rows in place; when the child was
+  already merged into another row, merge it again into the final parent to repoint the chain.
+
 ## Owner decisions (2026-10-12)
 Applied (`sql/20261012_owner_decisions.sql`): nine seeded ages the maker never states cleared to NAS (H.K. Young Toasted Barrel
 Blend, Horse Soldier, Shortbarrel Four Grain, Town Branch, Hard Truth Four Grain and Wheated, Blue Note Special Reserve and the two
@@ -478,6 +518,33 @@ pages, Boundary Oak's six sibling brands live). Shared code: `write.py` now hono
 Still open: shop.boundaryoak.co's `lincoln-straight-bourbon-12` for a person to read by hand (it may be the 8 Year); Calumet 10 Year's
 mash bill (74/18/8) is not yet on the verified row; the Calumet producer text could read Western Spirits Beverage Co.; the Peerless
 109.8 / 109.5 pair.
+
+## Owner decisions on the third batch (2026-10-13)
+Applied: Lincoln Cask Strength marked limited and kept as a second line (`sql/20261012_lincoln_limited_definitive_merge.sql`, which also
+merges the seeded Definitive Series Batch 11 into the Watch Hill row); Henry McKenna's contradictory 80-proof flagship merged into the
+verified Single Barrel Bottled-in-Bond row, which is now source maker; On Your Six mash bill 72/18/10 (`sql/20261013_batch3_owner_decisions.sql`);
+Burks Spring kept confirmed from its launch release with Kentucky Artisan Distillery as producer, both Morning Glory 109-proof seeds merged into
+the 100-proof Bottled-in-Bond row, the Rare Find and Morning Glory ages set NAS, and Ugly Dog's Distiller's Cache row refiled into the Distiller's
+Cache family (`sql/20261013_single_row_brand_decisions.sql`). The Trackside module stays as a tripwire.
+
+Open (nothing below is applied):
+- **Seeded ages the maker never states or states only as a floor** (set NAS?): Chattanooga 91 (2), 111 Cask (2), 99 Rye (3), Founder's 12th/13th/14th
+  (2 each) and the finishing casks (3-5), Centenary (4), Founder's 10th (garbled label); Frey Farm Strength Uncut (4) and Single Grain Barley (4.67);
+  Milam & Greene Port Rye (5) and Unabridged (junk age label); Still Austin Musician, Artist Rye, Cask Strength, Cask Strength Rye (2 each) and the four
+  Bottled-in-Bond rows (6/7/6/4); Copperworks Color Cask (4.75), Kilt Lifter (5), Pondera Cabernet (7.58), Red Wine (6.08), Amaro (7.08); Three Chord
+  Hard Pressed (4); the refiled Distiller's Cache row (12). Seeds that are off-site also carry ages (Milam & Greene flagship 4 and Castle Hill 15; Frey
+  Malted Corn, Smoked, Quad Malt, Five Grain).
+- **Frey Farm Strength Uncut Bourbon** is core and now browsable at its unconfirmed seed 124.6 (the page gives a range): hide it?
+- **Three Chord:** the seed "Strange Collaboration" (99, age 5.5) and the maker's Strange Collab (86, which claimed the Pinot Noir seed) are two visible
+  rows: merge? Halestorm, Black Stone Cherry and Dinosaur Jr. moved to blend (corn whiskey in the blend); The Cadillac Three is spirit type other.
+- **Wyoming** Small Batch and Outryder read age 5 from the Aged field while prose says a minimum of 5. **Outryder Limited Edition (2021)** may be the same
+  bottle as Outryder Whiskey (not merged). **Still Austin Cask Strength** now reads 116 (the product page; the seed and blurb said 118).
+- **Two Souls** has no `producer_id` (Watershed is the distillery for 3 of 22); its "Retired Spirits" shelf pages are live so none is flagged discontinued.
+- **Chattanooga** seeded finish text is wrong in places ("a Oloroso Sherry Cask", "Scotch Barrels"); the writer does not overwrite it.
+- **Blocked, for COLA or a hand read:** Middle West (server age gate; the Jefferson's route needs your approval), Trackside, Distiller's Cache, Flatboat,
+  Buckner's. Henry McKenna's verified row still shows the importer's rename to "Henry McKenna Single Barrel", skipped.
+- **Age-gate reading:** the agents read pages behind client-side 21+ overlays whose copy is in the served HTML (Wyoming, Chattanooga, Frey, Still Austin,
+  Three Chord, Trackside) without clicking or setting a cookie, as with Journeyman; say if that should change.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
