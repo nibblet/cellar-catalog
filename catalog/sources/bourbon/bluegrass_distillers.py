@@ -35,7 +35,7 @@ PRODUCER = "Bluegrass"
 DELAY = 6
 SITEMAP = "https://bluegrassdistillers.com/products-sitemap.xml"
 IMAGE_PREFIX = "https://bluegrassdistillers.com/"
-CATALOG_FAMILIES = ["Bluegrass Distillers", "Bluegrass"]
+CATALOG_FAMILIES = ["Bluegrass Distillers"]  # the lone "Bluegrass" Tournament of Roses row was re-filed here 2026-10-12
 PRODUCER_BY_FAMILY = {}
 
 FAMILY = "Bluegrass Distillers"
@@ -55,7 +55,7 @@ REFILE = {
     "elkwood-reserve-spanish-oaked": ("Elkwood Reserve Spanish Oaked", [], "Kentucky Straight Bourbon Whiskey", FAMILY, None),
     "elkwood-reserve-french-oaked": ("Elkwood Reserve French Oaked", [], "Kentucky Straight Bourbon Whiskey", FAMILY, None),
     "elkwood-reserve-toasted-oaked": ("Elkwood Reserve Toasted Oaked", [], "Kentucky Straight Bourbon Whiskey", FAMILY, None),
-    "tournament-of-roses-small-batch-toasted-oak-bourbon": ("Tournament of Roses Toasted Oak", ["Bluegrass Distillers Tournament of Roses Small Batch Toasted Oak Bourbon"], "Bourbon Whiskey", "Bluegrass", "Bluegrass Distillers Tournament of Roses Toasted Oak"),
+    "tournament-of-roses-small-batch-toasted-oak-bourbon": ("Tournament of Roses Toasted Oak", ["Bluegrass Distillers Tournament of Roses Small Batch Toasted Oak Bourbon"], "Bourbon Whiskey", "Bluegrass Distillers", "Bluegrass Distillers Tournament of Roses Toasted Oak"),
     "colonel-francisco-rye-whiskey": ("Midway Colonel Francisco Rye", [], "Rye Whiskey", FAMILY, None),
     "dudley-gratz": ("Midway Dudley & Gratz Rye", [], "Rye Whiskey", FAMILY, None),
     "lees-branch": ("Midway Lee's Branch Rye", [], "Rye Whiskey", FAMILY, None),
