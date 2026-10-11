@@ -54,7 +54,13 @@ def _promote(f: dict) -> list[str]:
     return ["is_core_range = true", "catalog_included = true"] if f.get("core") else ["catalog_included = catalog_included or is_core_range"]
 
 
-def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None) -> list[str]:
+def _rarity(f: dict, table) -> list[str]:
+    """Fill a missing rarity on a matched row from the module's own table; never overwrites one that is set."""
+    r = rarity_for(f["name"], list(table)) if table else None
+    return [f"rarity = coalesce(rarity, {q(r)}::cellar.rarity)"] if r else []
+
+
+def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None, rarity=()) -> list[str]:
     out: list[str] = []
     default = (producer, maker_id)
     for f in rep.corrections:
@@ -79,6 +85,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             "source = 'maker'" if f["proof"] is not None else None,  # a page that states no proof confirms nothing
             f"source_url = {q(f['source_url'])}", "source_checked_at = now()", "discontinued = false",
             *_promote(f),
+            *_rarity(f, rarity),
         ]
         out.append(f"update cellar.products set {', '.join(s for s in sets if s)} where id = {q(f['id'])} and facts_verified_at is null;")
 
@@ -87,7 +94,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
         out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
     for f in rep.matched:  # the maker agrees with every fact: confirmed by the maker, whatever seeded it
         producer, maker_id = (by_family or {}).get(f["family"], default)
-        sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", *_promote(f)]  # the maker lists it
+        sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", *_promote(f), *_rarity(f, rarity)]  # the maker lists it
         if f["proof"] is not None:
             sets.insert(0, "source = 'maker'")  # confirmed only when the page states the proof
         if producer:

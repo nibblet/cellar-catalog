@@ -381,12 +381,54 @@ cigar line gone from its site.
   Cross; Oregon Spirit = the 2017 BiB bourbon). Identify it from its own curated specs and age/proof
   before merging; never from name similarity.
 
+- A bottle's label is the maker's own legal statement of proof, and many sites state it only inside the bottle
+  photo (Stellum, Two Times Oak's American Oak). When the text has no number, read the full-size photo of the
+  maker's own page (not a retailer's), record each reading and the image id in the module, and use it only while
+  that same image is still on the cached page. Cross-check against the seeded values: Stellum's six readings landed
+  within 0.06 of the seeds. Lifestyle shots with a label too small to read confirm nothing.
+- A host that blocks the importer's honest client (Cloudflare 403) is not bypassed, but the pages can still be read
+  by a person-paced browser session. Only with the owner's explicit approval, and recorded as such: save the
+  main-content text into the module's cache (Jefferson's, `cache/jef`) and commit those files, since `cache/` is
+  git-ignored and they are the evidence. A re-read means refreshing them by hand; never script it.
+- A site that "states no proof" can change (Jefferson's rebuilt site now says "bottled at 88 proof" in prose):
+  re-check parked makers on a schedule, and grep every nav page for "proof" before parking.
+- A short marketing page can carry its only proof in its slug or image file name (Bluegrass' `100-proof-mash-bill-1`),
+  and a shared series blurb ("barrel-aged at least 3 years") is not a bottling's age. Each of A. Smith Bowman's
+  pages repeats its proof block once and the repeat can be an older copy: read the first block.
+- A seeded age with no maker statement is a candidate for NAS, not a fact to keep (Abraham Bowman releases carried
+  their release numbers as ages): the owner cleared four such rows on 2026-10-11 (`sql/20261011_bowman_jefferson_ages.sql`).
+- The writer now fills a null `rarity` on matched/corrected rows from the module's `RARITY` table (never overwrites a
+  set one). The 2026-10-11 backfill (`scripts/bourbon_promote.py`, `sql/20261011_rarity_and_core_backfill.sql`) applied
+  that to rows matched by earlier runs and promoted 67 core rows; maker rows still hidden are the ones their modules
+  call non-core (limited, anniversary, experimental), on purpose.
+
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
 The COLA public registry holds every approved label: brand, class/type, proof, age statement,
 bottler. It settles rows whose maker publishes no facts, proof on pages that only say "barrel
 proof", and craft brands with no real site. It is a search form, not a crawlable site, so it is a
 per-brand lookup module, not a crawl. Scoped after Tier 1 ships.
+
+## Continuing the catalog (after the 2026-10-11 round)
+
+Order of work, each cheap relative to the last:
+
+1. **Demand first.** Rank the unconfirmed seed families by member saves, then row count
+   (`cellar.member_saves` joined to `cellar.products where source <> 'maker'`). On 2026-10-11 the top of that list was
+   Shortbarrel (4 saves), WhistlePig, RD One, Hard Truth (24 rows), Blue Note, Lucky Seven, Town Branch, Blackened,
+   O.K.I., Horse Soldier, H.K. Young, Boone County. Run those through the importer pipeline in parallel batches of
+   1-3 makers per agent (module + cache + SQL file each; the coordinator owns shared docs and the commit).
+2. **Family hygiene** before more rows: one brand under two families ("Bluegrass" / "Bluegrass Distillers",
+   "Peerless" / "Kentucky Peerless", "James B. Beam"), wrong producers (Benchmark filed under A. Smith Bowman), and
+   one-off seed rows that belong to a release. These need `cellar.merge_product` or a producer fix, not importers.
+3. **Parked makers on a clock.** Re-check blocked/parked makers every quarter: Old Elk and Wilderness Trail unparked on
+   re-read, Jefferson's turned out to state proof. Still parked: Smooth Ambler, Driftless Glen, Legent, Peerless,
+   Kentucky Owl (no maker site). These, and anything with no proof in text, are the case for Phase 2 (TTB COLA).
+4. **New producers, quarterly.** Scan for new DSPs and newly launched brands (state distillers' guild lists, TTB
+   permit changes, new-release coverage), add the ones with a real site to `targets.yml`, and triage into step 1.
+5. **Refresh and review of active makers.** Re-crawl the done makers on a rolling schedule (use `source_checked_at`
+   to find the stalest), read every dry-run correction, and run the 25 + 25 audit sample. Drift to look for: proof
+   changes (Pinhook, Breckenridge), renamed or retired bottlings, seeded ages the maker never states.
 
 ## Quarterly (folds into REVIEW.md)
 

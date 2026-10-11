@@ -29,7 +29,7 @@ producer = getattr(src, "PRODUCER", None)
 image_prefix = getattr(src, "IMAGE_PREFIX", "https://" + src.SITEMAP.split("/")[2] + "/")
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 by_family = getattr(src, "PRODUCER_BY_FAMILY", {})  # a family with its own maker record (Maker's Mark under Beam)
-(out / "part1.sql").write_text("\n".join(statements(rep, producer=producer, maker_id=a.maker, image_prefix=image_prefix, by_family=by_family)))
+(out / "part1.sql").write_text("\n".join(statements(rep, producer=producer, maker_id=a.maker, image_prefix=image_prefix, by_family=by_family, rarity=getattr(src, "RARITY", ()))))
 for i, sql in enumerate(insert_batches(rep.additions, producer=producer, maker_id=a.maker, rarity=getattr(src, "RARITY", ()), by_family=by_family), 1):
     (out / f"inserts_{i}.sql").write_text(sql)
 print(f"{len(rep.corrections)} corrections, {len(rep.matched)} confirmed, {len(rep.additions)} additions, {len(rep.stale)} discontinued → {out}")
