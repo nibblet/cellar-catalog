@@ -422,15 +422,17 @@ cigar line gone from its site.
 - A brand's own-name domain can be a different business entirely (townbranch.com is an apartment complex): follow the
   old domain's redirect and check the page content.
 
-## Open owner decisions (2026-10-12)
-- Seeded ages the maker doesn't state: H.K. Young Toasted Barrel Blend (6 vs "7 - 8"), Horse Soldier flagship (4 from
-  "small batches of 4 year old bourbon"), Shortbarrel Four Grain (4 vs "four-to-five-year-old"), Town Branch flagship
-  (4 vs non-age-stated), Hard Truth Four Grain / Wheated (5), Blue Note Special Reserve (9.59 vs "4–19 Years") and Honey
-  Bourbon / Honey Rye (3).
-- Eighteen33 (Boone County, two MGP seed rows, 115.4 proof) probably retired; Town Branch Reserve Rye probably a duplicate of
-  Single Barrel Reserve Rye; O.K.I. rows' producer should be OKI Spirits LLC; Fireside Single Barrel (4 yr) is core but not
-  on the maker's site; the Peerless Straight Bourbon (109.8) vs Small Batch Barrel Proof (109.5) pair; whether to set
-  `status = 'confirmed'` on maker rows; 67 older matched core rows were promoted, ~134 non-core maker rows stay hidden.
+## Owner decisions (2026-10-12)
+Applied (`sql/20261012_owner_decisions.sql`): nine seeded ages the maker never states cleared to NAS (H.K. Young Toasted Barrel
+Blend, Horse Soldier, Shortbarrel Four Grain, Town Branch, Hard Truth Four Grain and Wheated, Blue Note Special Reserve and the two
+Honey casks); the two Eighteen33 rows flagged discontinued; Town Branch Reserve Rye merged into Single Barrel Reserve Rye; O.K.I.
+producer and maker now OKI Spirits LLC; Fireside Single Barrel (4 yr) no longer core.
+
+Still open: Hard Truth's other seeded ages the maker never states (Chocolate, Caramel and Malted Rye 2, French Oak Harvest Rye 3,
+Double Oaked Sweet Mash Rye 5, Maple Brulee 4, the flagship 'Hard Truth' 14); the Peerless Straight Bourbon (109.8) vs Small Batch
+Barrel Proof (109.5) pair; whether the writer should also set `status = 'confirmed'` on maker rows (264 still 'draft'; check the
+catalog-management UI first); WhistlePig Beyond Bonded Bourbon (BiB, no proof printed — read as 100?); ~134 non-core maker rows
+stay hidden on purpose.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
