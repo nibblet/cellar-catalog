@@ -339,6 +339,48 @@ cigar line gone from its site.
   guessed past year's URL 404s) — don't infer a historical-batch-archive pattern from one dated URL
   existing; check whether prior years' guesses actually resolve before assuming the pattern is real.
 
+- A "parked, no numbers" verdict has a shelf life, and the number may sit on a page that isn't a
+  product page. Old Elk's Squarespace site was rebuilt and now prints the proof under every bottling;
+  Wilderness Trail's three product pages never did, but its FAQ, process and whiskeys pages state
+  "bottled in bond ... exactly 100 proof" for the lineup it names. A module may read such a brand-wide
+  sentence at parse time and degrade to "no proof" if it disappears. Grep every nav page before parking.
+- A site's own domain can be a shell while a sibling host on the maker's domain or the brand owner's
+  shop is the real maker page (IJW's `ijwwhiskey.com` vs Puncher's Chance on `ourwolfspirit.com`;
+  highwest.com's empty Shopify vs `ship.highwest.com`). State the substitution in the module docstring.
+  Conversely a brand's official domain can lapse and be re-registered by an unrelated site (Kentucky
+  Owl): check the page's title and body, not just the 200.
+- Squarespace and Duda sites keep stale slugs, sitemap entries and footer links. The nav is the list and
+  the page heading names the bottling (Four Gate's `batch-30-triple-oak` is Batch 29); map from the
+  heading, never the slug.
+- Numbers on a product page can belong to someone else: carousels ("Try These Next", "Explore More",
+  "FIND NEAR ME" tails), testimonials, shared disclaimers naming another bottling, a second spec block
+  left over from the previous batch (take the first), and component ages in a blend ("5- and 6-year-old",
+  "5 years 10 months", age at re-barreling). Read age only from an `Age:` field, the title, or the
+  opening blurb, and never from the Bottled-in-Bond explainer's "four years" floor.
+- A page can carry several bottlings (Blue Run's Flight Series III, Four Gate's Bluegrass Trilogy,
+  High West's limited-releases page): return a list from `parse()`. Conversely a producer that names
+  every annual vintage after something (Pinhook's racehorses) gives each its own page: fold same-title
+  vintages into one record, oldest first so the newest wins, and merge the old per-vintage rows.
+- A blend of the same straight whiskey is that whiskey: High West's Double Rye is rye, not `blend`;
+  reserve `blend` for cross-type blends (Campfire, Bourye). A component statement or a finishing
+  subtitle in `class_raw` can poison `spirit_type()` ("blend of straight bourbons", "finished in rum
+  cask solera"): build `class_raw` from the label class and carry the finish separately.
+- `normalize.mash_style()` reads "20.5% rye" as "5% rye" (its percentage pattern takes no decimals), so a
+  20.5%-rye bourbon reads traditional. Pinhook computes the style in-module; the narrow fix to
+  `normalize.py` is still open (see the round's hand-off), then re-verify every applied source.
+- `normalize.finish()` false-positives on prose ("no matter the barrel finish we choose", "a distinct
+  secondary cask"): modules that see this read the finish themselves.
+- The writer used to promote only seed rows that already had `is_core_range`; it now also sets it from
+  the module's CORE table on a match. Rows matched by earlier runs were not backfilled, so check
+  `source = 'maker' and not catalog_included` after a run. The `discontinued` update now carries the
+  `facts_verified_at is null` guard, and `export.py` carries `specs.source_image_url` so a stored image
+  address stops reading as a pending "image: site has one" correction.
+- A `Crawl-delay` in robots.txt is a floor on politeness, not a hint (Oregon Spirit: 30; Clyde May's,
+  Old Elk: 10): set the module's DELAY to it.
+- A seed placeholder named only for the brand can be a specific release (Puncher's Chance = The Left
+  Cross; Oregon Spirit = the 2017 BiB bourbon). Identify it from its own curated specs and age/proof
+  before merging; never from name similarity.
+
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
 The COLA public registry holds every approved label: brand, class/type, proof, age statement,

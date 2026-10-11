@@ -165,7 +165,7 @@ def compare(records: list[BottlingRecord], catalog: list[dict]) -> Report:
             d["finish"] = (None, f["finish"])
         if f["msrp"] and not hit.get("msrp_usd"):
             d["msrp_usd"] = (None, f["msrp"])
-        if f["image"] and not hit.get("image_url"):
+        if f["image"] and not hit.get("image_url") and not hit.get("source_image"):  # image_url stays null by policy; the address is in specs
             d["image"] = (None, "site has one")
         if key(hit["name"]) != key(rec.name):
             d["name"] = (hit["name"], rec.name)

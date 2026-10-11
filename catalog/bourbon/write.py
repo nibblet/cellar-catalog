@@ -48,6 +48,12 @@ def insert_batches(additions: list[dict], *, producer: str | None, maker_id: str
     return [head + json.dumps(rows[i:i + size], ensure_ascii=False, separators=(",", ":")) + tail for i in range(0, len(rows), size)]
 
 
+def _promote(f: dict) -> list[str]:
+    """A bottling the module calls core and the maker lists becomes core and browsable, even when its seed
+    row was filed as a one-off. Never demotes: a row already core stays core."""
+    return ["is_core_range = true", "catalog_included = true"] if f.get("core") else ["catalog_included = catalog_included or is_core_range"]
+
+
 def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None) -> list[str]:
     out: list[str] = []
     default = (producer, maker_id)
@@ -72,7 +78,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             f"producer_id = coalesce(producer_id, {q(maker_id)}::uuid)" if maker_id else None,
             "source = 'maker'" if f["proof"] is not None else None,  # a page that states no proof confirms nothing
             f"source_url = {q(f['source_url'])}", "source_checked_at = now()", "discontinued = false",
-            "catalog_included = catalog_included or is_core_range",  # the promotion pass: a core bottling the maker lists is browsable
+            *_promote(f),
         ]
         out.append(f"update cellar.products set {', '.join(s for s in sets if s)} where id = {q(f['id'])} and facts_verified_at is null;")
 
@@ -81,7 +87,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
         out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
     for f in rep.matched:  # the maker agrees with every fact: confirmed by the maker, whatever seeded it
         producer, maker_id = (by_family or {}).get(f["family"], default)
-        sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", "catalog_included = catalog_included or is_core_range"]  # the maker lists it
+        sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", *_promote(f)]  # the maker lists it
         if f["proof"] is not None:
             sets.insert(0, "source = 'maker'")  # confirmed only when the page states the proof
         if producer:
@@ -92,6 +98,6 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             sets.append(_source_image(q, f["image"]))
         out.append(f"update cellar.products set {', '.join(sets)} where id = {q(f['id'])} and facts_verified_at is null;")
     if rep.stale:
-        out.append(f"update cellar.products set discontinued = true where id in ({', '.join(q(r['id']) for r in rep.stale)});")
+        out.append(f"update cellar.products set discontinued = true where id in ({', '.join(q(r['id']) for r in rep.stale)}) and facts_verified_at is null;")
     # No hero-image backfill; see the note in catalog/write.py.
     return out

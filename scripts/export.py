@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 BOURBON_COLS = ("id,name,brand,brand_family,expression,release_label,producer,producer_id,proof,age_years,age_label,nas,"
                 "spirit_type,mash_style,mash_bill,expression_type,bottled_in_bond,barrel_proof,finish,msrp_usd,rarity,"
-                "image_url,source,source_url,source_checked_at,aliases,facts_verified_at,catalog_included,is_core_range,discontinued,status")
+                "image_url,source,source_url,source_checked_at,aliases,facts_verified_at,catalog_included,is_core_range,discontinued,status,"
+                "source_image:specs->>source_image_url")  # the maker's image address lives in specs now, not image_url
 CIGAR_COLS = ("id,name,brand,line,expression,length_in,ring_gauge,shape,box_pressed,wrapper_leaf,wrapper_origin,wrapper_shade,"
               "strength,body,binder,filler,country,producer_id,image_url,source,source_url,aliases,facts_verified_at,catalog_included,discontinued")
 

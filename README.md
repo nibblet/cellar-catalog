@@ -115,6 +115,16 @@ rows to diff against over PostgREST.
 | heavensdoor.com (bourbon) | done — 4 bottlings; Wix, rebranded since the seed (Refuge/Revival/Ascension/Revelation) |
 | chickencockwhiskey.com (bourbon) | done — 12 bottlings; WordPress, collaboratively distilled at Bardstown Bourbon Company |
 | yellowstonebourbon.com (bourbon) | done — 8 bottlings; WordPress, Limestone Branch Distillery |
+| cedarridgedistillery.com (bourbon) | done — 35 bottlings parsed, 12 state a proof; WordPress, proof in three forms, flagship's 86 read from its own name |
+| bluerunspirits.com (bourbon) | done — 14 bottlings; Drupal, Flight Series III is one page with six bottlings |
+| breckenridgedistillery.com (bourbon) | done — 17 bottlings; WordPress, carousel of other spirits truncated off |
+| fourgatewhiskey.com (bourbon) | done — 37 batch bottlings; Duda, stale slugs so the page heading names the bottling |
+| highwest.com + ship.highwest.com (bourbon) | done — 15 bottlings; Shopify shell, facts from the sibling store and the compliance list |
+| ourwolfspirit.com / IJW (bourbon) | done — 5 Puncher's Chance bottlings from the brand's Shopify collection JSON |
+| jepthacreed.com, oregonspiritdistillers.com, pinhookbourbon.com, redemptionwhiskey.com, yellowrosedistilling.com (bourbon) | done — 7 / 9 / 27 / 12 / 7 bottlings |
+| clydemays.com, distillery291.com, docswhiskey.com, copperandkings.com (bourbon) | done — 3 / 15 / 27 / 2 bottlings |
+| oldelk.com, wildernesstraildistillery.com (bourbon) | done — unparked: Old Elk was rebuilt, Wilderness Trail's proof is on its FAQ |
+| smoothambler.com, driftlessglen.com, jeffersonsbourbon.com, kentuckyowl.com, stellum.com, 2xowhiskey.com (bourbon) | blocked or no proof stated — see targets.yml |
 | us.davidoffgeneva.com | done — Davidoff, Avo, Camacho, Zino, Zino Platinum: 191 rows from BigCommerce custom fields + metafields via the store's own server action (6 requests, no page crawl). Origins for wrapper/binder/filler and a 0–5 intensity per product; country from an approved per-brand map |
 | myfathercigars.com | done — My Father, Don Pepin Garcia, Flor de las Antillas, El Centurion, Jaime Garcia, La Dueña, La Antiguedad, Fonseca, Tabacos Baez: 130 sizes from 26 line pages (`<h3>Name L x R</h3>` under each cigar image). Blend line gives wrapper/binder/filler; "Handcrafted in …" gives country per page (three lines are USA or Honduras, not Nicaragua) |
 | rockypatel.com | done — Rocky Patel, Java, Nish Patel: 189 sizes from 42 line pages (a "Cigar Details" block in five formats). Country and mild/medium/full body from the maker's Honduran / Nicaraguan collection pages (its `cigar-category` taxonomy); wrapper/binder/filler from the block where stated, else from the page copy's "… wrapper" sentence, tobacco words only |
