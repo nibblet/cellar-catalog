@@ -421,6 +421,37 @@ cigar line gone from its site.
 - A brand's own-name domain can be a different business entirely (townbranch.com is an apartment complex): follow the
   old domain's redirect and check the page content.
 
+Second demand-ranked batch (2026-10-12: Pursuit United, Watch Hill Proper, K.Luke, Calumet Farm, Backbone, Brother's Bond,
+Journeyman, Boundary Oak):
+
+- A brand can have two sites, or its obvious domain can be the wrong business (calumetfarm.com is the horse farm, kluke.com
+  is parked, watchhillproper.com is the bar). Follow the nav's external links and the "Official Website" link on a review
+  page before parking a maker.
+- A maker that renames a line but keeps the old URL as a 301 (Pursuit: Triple Mash → Triple Batch) has proven identity:
+  adopt the maker's current name and alias the seed's.
+- A page that states a range ("PROOF: 105-120 / AGE: 2-4 YEARS" on Lincoln), "Proof Varies", "varies by batch" or
+  "Cask Strength" with no number states no proof. The row is listed, not confirmed, and a hand-entered label-photo row
+  (Lincoln 8 Year) cannot be reproduced by an importer. It needs COLA or a person reading the page.
+- A shop behind an age-verification redirect (Boundary Oak's shop.boundaryoak.co 307s every product to /age-verification)
+  is read from its sitemap for slugs only; do not pass the gate. Park the page for a person.
+- Series that list batches (Watch Hill Exceptional/Definitive, K.Luke's batch ledger) become one row holding the latest
+  batch's proof, like Booker's. Say so in the docstring: it drifts on every refresh. Check which batch is listed first.
+- A "Coming Soon" page is listed but is not a bottle. The writer makes every addition live, so keep it out of the module.
+- On Wix and Squarespace the series name often lives only in image alt text or file names; that is page markup, not OCR,
+  but cross-check it against text elsewhere on the site (K.Luke's trade sheet settled which table was the rye).
+- `normalize.flags()` reads "uncut" in a name as barrel proof (Backbone Decade Down Uncut is a round 110); `key()` cuts at
+  a quote or "(", so an alias with a quoted nickname is dropped as a self-alias. Use plain-text aliases.
+- A batch-labelled seed (`release_label = 'Batch 4'`) is never claimed by the diff, so the maker's flagship page inserts a
+  new row: fold the seed in with `cellar.merge_product(child, parent, 'Batch 4')` after the insert, in the same SQL file.
+- A shared blurb on a Shopify page can be printed twice, a truncated teaser ending "..." and the full text: reject captures
+  ending in "...". A mash-bill field can drop a word ("21% &"); the same page's quoted review spelled it out.
+- Component ages ("5 & 7 years old"), targets ("around 30 months") and "aged a minimum of N years" are not plainly an age
+  statement; the first two are never read, the third is an owner call (Brother's Bond reads it as the age).
+- The writer resets `discontinued = false` on matched rows, so a maker's own "Out to Pasture - Discontinued" page (Calumet) has
+  to be applied as a follow-up UPDATE that a re-run would undo. A `DISCONTINUED_BY_MAKER` hook in `write.py` would fix that.
+- `scripts/bourbon_write.py` evaluates `src.SITEMAP` even when `IMAGE_PREFIX` is set, so a module with a fixed `list_urls()`
+  and no sitemap must still define `SITEMAP` (a reference URL).
+
 ## Owner decisions (2026-10-12)
 Applied (`sql/20261012_owner_decisions.sql`): nine seeded ages the maker never states cleared to NAS (H.K. Young Toasted Barrel
 Blend, Horse Soldier, Shortbarrel Four Grain, Town Branch, Hard Truth Four Grain and Wheated, Blue Note Special Reserve and the two
@@ -433,6 +464,23 @@ Chocolate/Caramel/Malted Rye, French Oak Harvest Rye, Maple Brulee); every maker
 (the admin UI's review queue is `status = 'draft'`), and the writer sets that on every confirmation.
 
 Still open: the Peerless Straight Bourbon (109.8) vs Small Batch Barrel Proof (109.5) pair; ~134 non-core maker rows stay hidden on purpose.
+
+## Open owner decisions (second batch, 2026-10-12)
+Nothing below is applied; each is a call for the owner.
+- **Lincoln (Boundary Oak):** the page gives only a range, so no Lincoln row is confirmed. "Lincoln KY Straight Bourbon" and
+  "... Cask Strength" (both 118 proof, 2 yr) look like one bottle entered twice (one retail SKU bour401, UPC 864276000443); each
+  has one member save, so a merge needs `cellar.merge_product` and a choice of name. Someone should read
+  shop.boundaryoak.co's `lincoln-straight-bourbon-12` by hand; it may be the 8 Year.
+- **Seeded ages the maker never states** (clear to NAS?): Backbone Forge (5), Decade Down (10), Uncut Single Barrel (7),
+  Pursuit "Blended Straight" (5), Journeyman Featherbone (2).
+- **Brother's Bond:** "aged a minimum of N years" was read as the age (4, and 7 for Bottled in Bond). Say if that should be NAS.
+- **Calumet Farm 10 Year** is owner-verified and says wheated; the maker prints 74/18/8, which is traditional.
+- **Inferences the agents made:** Pursuit's seeded "Blended Straight/Rye" matched to Triple Batch 108 by proof and class
+  only; Calumet's flagship (96.2, 14 yr) renamed 14 Year on exact proof and age; Almost Old Bones read as bourbon.
+- **Not imported on purpose:** Backbone Old Bones Rye 15 (Canadian), Journeyman's "Cask Strength" pages with no number,
+  Pursuit's Coming Soon pages. Boundary Oak's six sibling brands are live (Patton is core); say if they should not be.
+- **Calumet producer text** arguably reads Western Spirits Beverage Co.
+- **Shared code:** a `DISCONTINUED_BY_MAKER` hook in `write.py` and a `getattr` default fix for `SITEMAP` in `bourbon_write.py`.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
