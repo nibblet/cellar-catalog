@@ -553,6 +553,28 @@ Still open:
 - **Age-gate policy:** client-side 21+ overlays whose copy is in the served HTML are read without clicking (Journeyman, Wyoming, Chattanooga, Frey, Still
   Austin, Three Chord, Trackside); a server-side gate needs the owner's go-ahead and is read by hand in the app's browser.
 
+## Taste wheel (2026-10-13)
+A bourbon's wheel (`wheel_vector`, rolled up to `trait_vector`) comes from review text: the web app's `pnpm seed:enrich --type bourbon`
+(`scripts/seed/enrich-descriptors.ts`, `src/lib/enrich/wheel-enrich.ts`, gpt-5-nano) reads `product_reviews` and scores the wheel's 39 leaves; member
+tastings add to it. Our importers never captured tasting notes, so every row they created had no wheel. On 2026-10-13: live rows with a wheel went from
+258 of 962 (26.8%) to 390 (40.5%), core rows from 168 to 235 of 531.
+
+- `scripts/bourbon_notes.py measure|emit` re-parses the cached pages (no network), keeps each record's `tasting_notes or description` when it names at least
+  three real flavors from the wheel's own leaves and synonyms (grain, oak and smoke excluded: mash bills and cask lines name them), matches the record to
+  its catalog row with the diff, and writes `product_reviews` rows (source = the maker's domain, reviewer = the maker, one per product and page; applied
+  with the service key, record in `sql/20261013_maker_tasting_notes.sql`). 217 of 1,206 records qualified, 108 of them rows with no wheel. The notes are
+  the maker's own words, so they respect the maker-is-the-source rule, and they touch no facts.
+- **Headroom:** about 869 of 1,183 cached pages have tasting text near a nose/palate/finish marker, but modules only capture 217. The next step is per-module
+  capture: set `tasting_notes` in each `parse()` from the page's own section (not the "explore other spirits" carousel), re-run `bourbon_notes.py emit`, then
+  `seed:enrich`. 567 live rows still have no review text at all.
+- **Three bugs found and fixed in the web repo (uncommitted there):** (1) `wheel-enrich.ts` made every leaf a required integer 1-5, so the model had to score
+  all 39 leaves; 24 existing wheels (Maker's Mark, Weller, Old Forester...) were that flat output. Leaves are now nullable, so output is the intended 4-10.
+  Backed up in `sql/20261013_dense_wheels_backup.sql`, cleared in `sql/20261013_dense_wheels_clear.sql`, rebuilt. (2) `enrich-descriptors.ts` used the seed
+  client, which has no schema and so reads and writes the stale `public.products`, not `cellar.products`; it is now scoped to `cellar`. (3) It paged by a
+  non-unique `name` and skipped rows (saw 38 of 152 candidates); it now pages by `id` with the empty-wheel filter on the server, and takes `--shard i/n`.
+- **Not fixed:** `src/lib/openai/map-wheel.ts` (member tastings to wheel) has the same required-integer schema; 4 of the 5 member tastings with a wheel are dense.
+- **Do not** use `seed:enrich-web` for bourbon: it also fills specs and images from web search, which breaks the maker-only rule.
+
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
 The COLA public registry holds every approved label: brand, class/type, proof, age statement,
