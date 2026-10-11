@@ -446,11 +446,11 @@ Journeyman, Boundary Oak):
 - A shared blurb on a Shopify page can be printed twice, a truncated teaser ending "..." and the full text: reject captures
   ending in "...". A mash-bill field can drop a word ("21% &"); the same page's quoted review spelled it out.
 - Component ages ("5 & 7 years old"), targets ("around 30 months") and "aged a minimum of N years" are not plainly an age
-  statement; the first two are never read, the third is an owner call (Brother's Bond reads it as the age).
-- The writer resets `discontinued = false` on matched rows, so a maker's own "Out to Pasture - Discontinued" page (Calumet) has
-  to be applied as a follow-up UPDATE that a re-run would undo. A `DISCONTINUED_BY_MAKER` hook in `write.py` would fix that.
-- `scripts/bourbon_write.py` evaluates `src.SITEMAP` even when `IMAGE_PREFIX` is set, so a module with a fixed `list_urls()`
-  and no sitemap must still define `SITEMAP` (a reference URL).
+  statement; none of the three is read (the owner kept Brother's Bond NAS on 2026-10-12).
+- The writer resets `discontinued = false` on matched rows, so a maker's own "Out to Pasture - Discontinued" page (Calumet) is
+  named in the module's `DISCONTINUED_BY_MAKER` set (by expression); `write.py` then writes `true` for those and a re-run holds.
+- A trigger (`cellar.protect_verified_facts`) rejects a fact change on a verified row unless `facts_verified_at` moves too, which
+  is the intended route for an explicit owner change; an importer never does it (its updates all say `facts_verified_at is null`).
 
 ## Owner decisions (2026-10-12)
 Applied (`sql/20261012_owner_decisions.sql`): nine seeded ages the maker never states cleared to NAS (H.K. Young Toasted Barrel
@@ -465,22 +465,19 @@ Chocolate/Caramel/Malted Rye, French Oak Harvest Rye, Maple Brulee); every maker
 
 Still open: the Peerless Straight Bourbon (109.8) vs Small Batch Barrel Proof (109.5) pair; ~134 non-core maker rows stay hidden on purpose.
 
-## Open owner decisions (second batch, 2026-10-12)
-Nothing below is applied; each is a call for the owner.
-- **Lincoln (Boundary Oak):** the page gives only a range, so no Lincoln row is confirmed. "Lincoln KY Straight Bourbon" and
-  "... Cask Strength" (both 118 proof, 2 yr) look like one bottle entered twice (one retail SKU bour401, UPC 864276000443); each
-  has one member save, so a merge needs `cellar.merge_product` and a choice of name. Someone should read
-  shop.boundaryoak.co's `lincoln-straight-bourbon-12` by hand; it may be the 8 Year.
-- **Seeded ages the maker never states** (clear to NAS?): Backbone Forge (5), Decade Down (10), Uncut Single Barrel (7),
-  Pursuit "Blended Straight" (5), Journeyman Featherbone (2).
-- **Brother's Bond:** "aged a minimum of N years" was read as the age (4, and 7 for Bottled in Bond). Say if that should be NAS.
-- **Calumet Farm 10 Year** is owner-verified and says wheated; the maker prints 74/18/8, which is traditional.
-- **Inferences the agents made:** Pursuit's seeded "Blended Straight/Rye" matched to Triple Batch 108 by proof and class
-  only; Calumet's flagship (96.2, 14 yr) renamed 14 Year on exact proof and age; Almost Old Bones read as bourbon.
-- **Not imported on purpose:** Backbone Old Bones Rye 15 (Canadian), Journeyman's "Cask Strength" pages with no number,
-  Pursuit's Coming Soon pages. Boundary Oak's six sibling brands are live (Patton is core); say if they should not be.
-- **Calumet producer text** arguably reads Western Spirits Beverage Co.
-- **Shared code:** a `DISCONTINUED_BY_MAKER` hook in `write.py` and a `getattr` default fix for `SITEMAP` in `bourbon_write.py`.
+## Owner decisions on the second batch (2026-10-12)
+Applied (`sql/20261012_second_batch_owner_decisions.sql`): ten seeded or inferred ages cleared to NAS (Backbone The Forge, Decade
+Down and Uncut Single Barrel; Pursuit Triple Batch Bourbon 108; Journeyman Featherbone; all five Brother's Bond rows, so "aged a
+minimum of N years" is no longer read: the parser does not read it); Calumet Farm 10 Year (owner-verified) set traditional, with
+`facts_verified_at` re-stamped because `cellar.protect_verified_facts()` blocks a verified change otherwise. Accepted as is: the two
+Lincoln rows stay separate (the standard bottling and the new one), the agents' inferences (Pursuit Triple Batch 108 rename, Calumet
+14 Year rename, Almost Old Bones as bourbon), and the excluded items (Old Bones Rye 15, no-number Cask Strength pages, Coming Soon
+pages, Boundary Oak's six sibling brands live). Shared code: `write.py` now honours a module's `DISCONTINUED_BY_MAKER` set
+(writes `discontinued = true` for those expressions) and `bourbon_write.py` no longer needs a `SITEMAP` when `IMAGE_PREFIX` is set.
+
+Still open: shop.boundaryoak.co's `lincoln-straight-bourbon-12` for a person to read by hand (it may be the 8 Year); Calumet 10 Year's
+mash bill (74/18/8) is not yet on the verified row; the Calumet producer text could read Western Spirits Beverage Co.; the Peerless
+109.8 / 109.5 pair.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 

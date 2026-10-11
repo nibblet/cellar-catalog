@@ -17,11 +17,8 @@ last gallery marker and "Tasting Notes"; "You May Also Like" carries the sibling
   listed and corrected but not confirmed, and the seed's 114.1 stays.
 - Mash bill: "Mash Bill: 65% Corn, 22% Rye, 13% Wheat & Barley" (the maker lumps wheat and barley into one figure;
   kept as printed).
-- Age: every blurb says "aged a minimum of N years" (Straight Bourbon 4, Regenerative Grain 4, Original Cask Strength 4,
-  American Blended Rye 4, Bottled-in-Bond 7: "a minimum of seven years — three years longer than required"). That is the
-  maker's own statement about the bottling (the youngest whiskey in it), not the legal definition, and it is how the
-  label's age statement works; normalize.age() reads "aged ... a minimum of N years". The seeds said NAS; the diff
-  corrects them to the stated age. Listed for the owner.
+- Age: every blurb says "aged a minimum of N years" (4 for four bottlings, 7 for Bottled-in-Bond), but that is a floor, not
+  an age statement. Owner decision 2026-10-12: Brother's Bond stays NAS, so no age is read and the seeded NAS stands.
 
 Batches: the Regenerative Grain release is numbered by batch on the label ("New Batch", "Batch 0002" in the seed), but
 the maker's page is one standing product with no batch number, so it is ONE bottling, "Regenerative Grain Bourbon",
@@ -42,7 +39,7 @@ import re
 import urllib.parse
 
 from ...bourbon.model import BottlingRecord
-from ...bourbon.normalize import age, proof as parse_proof
+from ...bourbon.normalize import proof as parse_proof
 
 PRODUCER = "Brother's Bond"
 DELAY = 6
@@ -105,7 +102,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     strength = sm.group(1) if sm else ""
     proof = parse_proof(strength) if re.search(r"\d", strength) else None
 
-    years, label = age(seg)
+    years, label = None, None  # NAS by owner decision: "aged a minimum of N years" is not read
 
     # The blurb is printed twice: a truncated teaser ("22% Rye,... | Read More") and the full text; take the full one.
     mash_raw = None

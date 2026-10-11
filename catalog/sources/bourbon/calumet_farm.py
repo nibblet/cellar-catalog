@@ -33,9 +33,8 @@ What is a row (decided here, so a re-run reproduces it):
     the Centennial Bottled-in-Bond: Bottled in Bond is 100 proof by law (the rule the project allows), so it is read as 100 and
     its page's "aged for a minimum of 4 years" (the Act's floor) is NOT read as an age.
   - What the maker itself calls discontinued ("Out to pasture - Discontinued": the 14 Year and the old 12 Year Single Rack
-    Black) is DISCONTINUED_BY_MAKER. The shared writer always sets `discontinued = false` on a matched row, so the follow-up
-    `update ... set discontinued = true` is applied by hand after part1 (see sql/20261012_calumet_farm.sql); a re-run of the
-    writer needs the same follow-up. Rows the pages do not list stay as seeds.
+    Black) is DISCONTINUED_BY_MAKER. The shared writer reads that set (write.py `_gone`) and writes `discontinued = true` for
+    those expressions instead of the usual `false`, so a re-run reproduces it. Rows the pages do not list stay as seeds.
 Availability on each page ("High", "Low/Rare") drives RARITY."""
 from __future__ import annotations
 

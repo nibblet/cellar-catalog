@@ -60,7 +60,13 @@ def _rarity(f: dict, table) -> list[str]:
     return [f"rarity = coalesce(rarity, {q(r)}::cellar.rarity)"] if r else []
 
 
-def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None, rarity=()) -> list[str]:
+def _gone(f, discontinued_by_maker) -> str:
+    """A listed page normally clears `discontinued`; a page the maker itself files as discontinued (Calumet's 'Out to
+    pasture') sets it. The module names those bottlings by expression in DISCONTINUED_BY_MAKER."""
+    return f"discontinued = {'true' if f['expression'] in discontinued_by_maker else 'false'}"
+
+
+def statements(rep: Report, *, producer: str | None, maker_id: str | None, image_prefix: str, by_family: dict | None = None, rarity=(), discontinued_by_maker=()) -> list[str]:
     out: list[str] = []
     default = (producer, maker_id)
     for f in rep.corrections:
@@ -83,7 +89,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
             f"producer = coalesce(producer, {q(producer)})" if producer else None,
             f"producer_id = coalesce(producer_id, {q(maker_id)}::uuid)" if maker_id else None,
             "source = 'maker', status = 'confirmed'" if f["proof"] is not None else None,  # a page that states no proof confirms nothing
-            f"source_url = {q(f['source_url'])}", "source_checked_at = now()", "discontinued = false",
+            f"source_url = {q(f['source_url'])}", "source_checked_at = now()", _gone(f, discontinued_by_maker),
             *_promote(f),
             *_rarity(f, rarity),
         ]
@@ -94,7 +100,7 @@ def statements(rep: Report, *, producer: str | None, maker_id: str | None, image
         out.append(f"update cellar.products set source_checked_at = now() where id in ({', '.join(q(i) for i in checked)});")
     for f in rep.matched:  # the maker agrees with every fact: confirmed by the maker, whatever seeded it
         producer, maker_id = (by_family or {}).get(f["family"], default)
-        sets = [f"source_url = {q(f['source_url'])}", "discontinued = false", *_promote(f), *_rarity(f, rarity)]  # the maker lists it
+        sets = [f"source_url = {q(f['source_url'])}", _gone(f, discontinued_by_maker), *_promote(f), *_rarity(f, rarity)]  # the maker lists it
         if f["proof"] is not None:
             sets.insert(0, "source = 'maker', status = 'confirmed'")  # confirmed only when the page states the proof
         if producer:

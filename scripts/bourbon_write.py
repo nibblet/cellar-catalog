@@ -26,10 +26,10 @@ rep = compare(records, catalog)
 allowed = {i for i in a.stale_only.split(",") if i}
 rep.stale = [r for r in rep.stale if r["id"] in allowed]  # a maker's site is not exhaustive; stale is opt-in
 producer = getattr(src, "PRODUCER", None)
-image_prefix = getattr(src, "IMAGE_PREFIX", "https://" + src.SITEMAP.split("/")[2] + "/")
+image_prefix = getattr(src, "IMAGE_PREFIX", None) or "https://" + src.SITEMAP.split("/")[2] + "/"  # a module with a fixed list_urls() may have no SITEMAP
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 by_family = getattr(src, "PRODUCER_BY_FAMILY", {})  # a family with its own maker record (Maker's Mark under Beam)
-(out / "part1.sql").write_text("\n".join(statements(rep, producer=producer, maker_id=a.maker, image_prefix=image_prefix, by_family=by_family, rarity=getattr(src, "RARITY", ()))))
+(out / "part1.sql").write_text("\n".join(statements(rep, producer=producer, maker_id=a.maker, image_prefix=image_prefix, by_family=by_family, rarity=getattr(src, "RARITY", ()), discontinued_by_maker=getattr(src, "DISCONTINUED_BY_MAKER", ()))))
 for i, sql in enumerate(insert_batches(rep.additions, producer=producer, maker_id=a.maker, rarity=getattr(src, "RARITY", ()), by_family=by_family), 1):
     (out / f"inserts_{i}.sql").write_text(sql)
 print(f"{len(rep.corrections)} corrections, {len(rep.matched)} confirmed, {len(rep.additions)} additions, {len(rep.stale)} discontinued → {out}")
