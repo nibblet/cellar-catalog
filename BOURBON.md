@@ -466,7 +466,7 @@ Buckner's, Middle West):
 - A page that lists a seasonal series with a floor that changes each release (Still Austin Bottled in Bond) is one row per type,
   100 proof by the definition, with no age.
 - Server-side age gates versus overlays: check the flattened text length before deciding. Middle West serves a 136-character
-  gate on every URL (a block to report); WordPress, Webflow, Squarespace and Wix overlays leave the copy in the static HTML
+  gate on every URL (read by hand with the owner's approval, see 'Middle West' under the third-batch decisions); WordPress, Webflow, Squarespace and Wix overlays leave the copy in the static HTML
   (Frey, Still Austin, Wyoming, Chattanooga, Journeyman, Trackside), and Shopify `/products/<handle>.json` bypasses nothing.
 - A seed in the owner's collection can be a store or barrel pick filed under the flagship's expression (Morning Glory's Office
   Cigar Lounge pick, Distiller's Cache's Total Wine pick): read `specs.additional_notes` before letting a maker page correct it. A
@@ -527,24 +527,31 @@ Burks Spring kept confirmed from its launch release with Kentucky Artisan Distil
 the 100-proof Bottled-in-Bond row, the Rare Find and Morning Glory ages set NAS, and Ugly Dog's Distiller's Cache row refiled into the Distiller's
 Cache family (`sql/20261013_single_row_brand_decisions.sql`). The Trackside module stays as a tripwire.
 
-Open (nothing below is applied):
-- **Seeded ages the maker never states or states only as a floor** (set NAS?): Chattanooga 91 (2), 111 Cask (2), 99 Rye (3), Founder's 12th/13th/14th
-  (2 each) and the finishing casks (3-5), Centenary (4), Founder's 10th (garbled label); Frey Farm Strength Uncut (4) and Single Grain Barley (4.67);
-  Milam & Greene Port Rye (5) and Unabridged (junk age label); Still Austin Musician, Artist Rye, Cask Strength, Cask Strength Rye (2 each) and the four
-  Bottled-in-Bond rows (6/7/6/4); Copperworks Color Cask (4.75), Kilt Lifter (5), Pondera Cabernet (7.58), Red Wine (6.08), Amaro (7.08); Three Chord
-  Hard Pressed (4); the refiled Distiller's Cache row (12). Seeds that are off-site also carry ages (Milam & Greene flagship 4 and Castle Hill 15; Frey
-  Malted Corn, Smoked, Quad Malt, Five Grain).
-- **Frey Farm Strength Uncut Bourbon** is core and now browsable at its unconfirmed seed 124.6 (the page gives a range): hide it?
-- **Three Chord:** the seed "Strange Collaboration" (99, age 5.5) and the maker's Strange Collab (86, which claimed the Pinot Noir seed) are two visible
-  rows: merge? Halestorm, Black Stone Cherry and Dinosaur Jr. moved to blend (corn whiskey in the blend); The Cadillac Three is spirit type other.
+Round two (same day, applied in `sql/20261013_third_batch_owner_decisions.sql`): all 46 seeded ages the makers never state or state only as a
+floor set to NAS (Chattanooga, Frey Ranch, Milam & Greene, Still Austin, Copperworks, Three Chord and the refiled Distiller's Cache row, including the
+off-site seeds and the garbled labels; Triple Peat's stated 4.17 and every stated age stay); Frey Farm Strength Uncut Bourbon stays browsable;
+Three Chord's seeded "Strange Collaboration" merged into the maker's "Strange Collab" at the owner's 99 proof (the maker's page states 86, so the row
+is stamped owner-verified and an importer will list the 86 as "[verified - will be skipped]"). Owner approval to click through age gates: used for
+Middle West (below); the Boundary Oak shop navigation was denied by the permission system, so the shop reads and the Three Chord store are not done.
+
+Middle West (`sql/20261013_middle_west.sql`, module `middle_west.py`, cache `cache/mw` force-committed like `cache/jef`): the gate's own "Yes, I am 21+"
+button was clicked in the app's browser pane and each whiskey page read by hand (never script it; a re-read refreshes the cache files by hand). 5 seeds
+confirmed, Vino De Naranja 122.2 corrected to 112, the Dark Pumpernickel Rye, Straight Wheat Whiskey, Ported Rye and Oloroso Wheat added, the duplicate
+6 Year Sherry seed merged into the core Sherry row (97.25 on the page), Michelone Reserve and Vino De Naranja ages set to NAS (a floor).
+
+Still open:
+- **Gated shops not read:** shop.boundaryoak.co `lincoln-straight-bourbon-12` (may be the Lincoln 8 Year) and store.threechordbourbon.com (11 Three Chord
+  seeds). The age-gate click was approved in chat but the navigation was denied by the permission system; say if and how to proceed.
+- **Frey Farm Strength Uncut Bourbon** is core and browsable at its unconfirmed seed 124.6 (kept by the owner).
 - **Wyoming** Small Batch and Outryder read age 5 from the Aged field while prose says a minimum of 5. **Outryder Limited Edition (2021)** may be the same
-  bottle as Outryder Whiskey (not merged). **Still Austin Cask Strength** now reads 116 (the product page; the seed and blurb said 118).
+  bottle as Outryder Whiskey (not merged). **Still Austin Cask Strength** reads 116 (the product page; the seed and blurb said 118).
+- **Three Chord:** Halestorm, Black Stone Cherry and Dinosaur Jr. moved to blend (corn whiskey in the blend); The Cadillac Three is spirit type other.
 - **Two Souls** has no `producer_id` (Watershed is the distillery for 3 of 22); its "Retired Spirits" shelf pages are live so none is flagged discontinued.
 - **Chattanooga** seeded finish text is wrong in places ("a Oloroso Sherry Cask", "Scotch Barrels"); the writer does not overwrite it.
-- **Blocked, for COLA or a hand read:** Middle West (server age gate; the Jefferson's route needs your approval), Trackside, Distiller's Cache, Flatboat,
-  Buckner's. Henry McKenna's verified row still shows the importer's rename to "Henry McKenna Single Barrel", skipped.
-- **Age-gate reading:** the agents read pages behind client-side 21+ overlays whose copy is in the served HTML (Wyoming, Chattanooga, Frey, Still Austin,
-  Three Chord, Trackside) without clicking or setting a cookie, as with Journeyman; say if that should change.
+- **Blocked, for COLA:** Trackside, Distiller's Cache, Flatboat, Buckner's. Henry McKenna's verified row still shows the importer's rename to "Henry McKenna
+  Single Barrel", skipped.
+- **Age-gate policy:** client-side 21+ overlays whose copy is in the served HTML are read without clicking (Journeyman, Wyoming, Chattanooga, Frey, Still
+  Austin, Three Chord, Trackside); a server-side gate needs the owner's go-ahead and is read by hand in the app's browser.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)
 
