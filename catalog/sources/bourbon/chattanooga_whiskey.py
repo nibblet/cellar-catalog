@@ -30,7 +30,10 @@ Judgments carried here so a re-run reproduces them:
 - Cabernet Cask and the Single Pot Still are labelled "Straight Malt Whiskey" (no "single malt" on the label), so their spirit
   type reads `other`, not the seeded `american_single_malt`; the seeds' "Single Malt" names are dropped (aliased). Owner call.
 - "99 Rye" is "Straight Rye Malt Whiskey" and reads as rye, like the seed.
-- Mash bills are stored nowhere: the pages list grains and in-house recipe codes (SB091, R18025), never percentages of a bill."""
+- Mash bills are stored nowhere: the pages list grains and in-house recipe codes (SB091, R18025), never percentages of a bill.
+- `tasting_notes` is the spec block's own "Tasting notes:" line (one line: flavors, sometimes a mouthfeel and finish). The
+  "Featured Mash Bills" flavor codes under it, the finishing-cask story above it and the tile list of other products
+  below it are never read. The label is "Tasting Notes:" on some pages and "Tasting notes:" on others."""
 from __future__ import annotations
 
 import html
@@ -110,9 +113,11 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     img = next((m.group(1) for m in re.finditer(r'<img (?:class="product-image" )?src="([^"]+)" alt="([^"]*)"', page)
                 if html.unescape(m.group(2)).replace("\u2019", "'").lower() == alt.lower()), None)
+    nm = re.search(r"Tasting notes:\s*\|\s*([^|]+)", own, re.I)
+    notes = re.sub(r"\s+", " ", nm.group(1)).strip() if nm else None
     return BottlingRecord(
         brand_family="Chattanooga Whiskey", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, finish=finish,
-        image_url=img,
+        image_url=img, tasting_notes=notes or None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

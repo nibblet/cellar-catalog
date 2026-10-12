@@ -46,7 +46,10 @@ because normalize.flags() reads the word "uncut" in a name as barrel proof, and 
 Naming: Backbone-labelled bottlings carry the family ('Backbone Bourbon Uncut'); the sub-brands Old Bones, Almost Old
 Bones and Bone Snapper are named as the label reads. The seeds' names are aliases: 'Backbone Bourbon The Forge
 Blended', 'Backbone Decade Down Anniversary Edition', 'Old Bones Reserve' (the seed is 110 proof / 10 years / bourbon:
-Old Bones Bourbon 10 Year Reserve is the one Old Bones bottling that agrees on all three; Old Bones Rye 10 is rye)."""
+Old Bones Bourbon 10 Year Reserve is the one Old Bones bottling that agrees on all three; Old Bones Rye 10 is rye).
+
+`tasting_notes` is the maker's own "Tasting Notes:" paragraph in the facts block (the current batch's). The Whisky Advocate
+and press reviews quoted below it are a reviewer's words about a past batch and are not read."""
 from __future__ import annotations
 
 import html
@@ -116,6 +119,21 @@ def _recipe(chunk: str) -> str | None:
     return ", ".join(parts) or None
 
 
+def _tasting(own: str) -> str | None:
+    segs = [x.strip() for x in own.split("|") if x.strip()]
+    start = next((i for i, x in enumerate(segs) if re.match(r"Tasting Notes\s*:?$", x, re.I)), None)
+    if start is None:
+        return None
+    body = []
+    for x in segs[start + 1:]:
+        if re.match(r"(?:Whisky Advocate|Maxim)\b", x):
+            break  # the first quoted review
+        body.append(x)
+    text = re.sub(r"^:\s*", "", " ".join(body)).strip()
+    text = re.sub(r"^:\s*", "", text)
+    return re.sub(r"\s+", " ", text)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -151,6 +169,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family="Backbone Bourbon", expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, image_url=img,
+        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, tasting_notes=_tasting(own), image_url=img,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

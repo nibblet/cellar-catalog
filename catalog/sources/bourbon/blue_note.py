@@ -27,6 +27,10 @@ The Toasted page is the old Crossroads (its own cocktail and award images are na
 states "Finished with two types of toasted French oak staves" and 100 proof, same as both Crossroads rows in the
 catalog. The product photo is the last bare `<img src=...>` before the Technical Details block (the nav carries
 the other products' bottle shots on every page, so og:image — there is none — and page-wide scans are wrong).
+
+`tasting_notes` is the Nose / Taste / Finish lines the page prints either ahead of the Technical Details block or under a
+"Sensory Notes" heading after it (the Body line is left out). Toasted, Uncut, Las Notas, the two proof-less pages and the
+Special Reserves carry no tasting lines, so they stay None.
 """
 from __future__ import annotations
 
@@ -139,6 +143,27 @@ def _image(page: str, slug: str = "") -> str | None:
     return bare[-1] if bare else None
 
 
+NOTE_END = re.compile(r"Technical Details|BUY NOW|Awards\||Please note|CURRENT RELEASES", re.I)
+NOTE_LABEL = re.compile(r"\b(Nose|Body|Taste|Finish)\s*\|?\s*:\s*\|?", re.I)
+
+
+def _tasting_notes(own: str) -> str | None:
+    """The labelled Nose / Body / Taste / Finish run (`Nose:| ...| Body:| ...` or `Nose| : ...`), cut at the next section. A
+    value can wrap across two `|` segments, so it runs to the next label. Body is texture, not flavor, and is dropped."""
+    m = re.search(r"\bNose\s*\|?\s*:\s*\|?", own, re.I)  # the Technical Details block has its own "Finish:" field (a cask finish): start at Nose
+    if not m:
+        return None
+    end = NOTE_END.search(own, m.end())
+    zone = own[m.start():end.start() if end else len(own)]
+    parts = NOTE_LABEL.split(zone)  # ["", "Nose", value, "Body", value, ...]
+    notes = []
+    for label, value in zip(parts[1::2], parts[2::2]):
+        value = re.sub(r"\s+", " ", value.replace("|", " ")).strip(" :.")
+        if value and label.lower() != "body":
+            notes.append(f"{label.title()}: {value}.")
+    return " ".join(notes)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -156,6 +181,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Blue Note", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw,
-        mash_style="rye" if rye else None, finish=finish, image_url=_image(page, slug),
+        mash_style="rye" if rye else None, finish=finish, tasting_notes=_tasting_notes(own), image_url=_image(page, slug),
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

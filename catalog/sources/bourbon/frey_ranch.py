@@ -30,7 +30,11 @@ What each page states, and what it does not:
 Not imported: Single Barrel whiskeys / the Single Barrel Program (a program, every barrel differs and no proof is
 stated), the Harvester Series, Quad Malt, 100% Malted Corn, the American Single Malt and the Five Grain Single Barrel (no
 page on either site: they stay seeds), flavored single barrels (#848 Cream Soda, #849 Buttered Popcorn), the one-off
-"Friends of Frey" Terry Memorial barrel, 3L/bundles. The single-malt/malted-corn seeds are not claimed by anything here."""
+"Friends of Frey" Terry Memorial barrel, 3L/bundles. The single-malt/malted-corn seeds are not claimed by anything here.
+
+tasting_notes is the bottle's own nose / palate / finish copy: on the main site the tasting paragraph under the "Double
+Distilled for a Higher Quality Whiskey." tile (its mash-bill sentence dropped), in the store the "Nose:/Palate:/Finish:" or
+"Tasting Notes:" lines of the `body_html`. The Bottled-in-Bond Rye and Barley pages state none, so those stay None."""
 from __future__ import annotations
 
 import html
@@ -96,6 +100,27 @@ def _main_copy(flat: str) -> str:
     return part
 
 
+def _main_notes(own: str) -> str | None:
+    """The tasting paragraph is the cell after the "Double Distilled ..." tile; its mash-bill sentence is not taste."""
+    m = re.search(r"Higher Quality Whiskey\.\| ([^|]+)\|", own)
+    if not m:
+        return None
+    sentences = re.split(r"(?<=[.!?])\s+", m.group(1).strip())
+    t = " ".join(x for x in sentences if not re.search(r"mash bill|grown|grains", x, re.I))
+    return t if re.search(r"\b(?:aromas?|nose|palate|finish|notes of)\b", t, re.I) else None
+
+
+def _shop_notes(body_html: str) -> str | None:
+    """Nose / Palate / Finish (or a single "Tasting Notes:" line) from the product copy; each label is its own cell."""
+    cells = [c.strip() for c in re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "|", body_html))).replace("’", "'").split("|") if c.strip()]
+    got = []
+    for label in ("Nose", "Palate", "Finish", "Tasting Notes"):
+        i = next((k for k, c in enumerate(cells[:-1]) if c.rstrip(":").strip() == label and c.endswith(":")), None)
+        if i is not None:
+            got.append(f"{label}: {cells[i + 1]}")
+    return " ".join(got)[:900] or None
+
+
 def _image(page: str) -> str | None:
     for src in re.findall(r'<img[^>]+(?:data-src|src)="(https://freyranch\.com/wp-content/uploads/[^"]+\.(?:png|jpg|jpeg|gif|webp))"', page):
         if not re.search(r"yellow|btn|ascot|sticker|icon|award|medal|logo|competition|topper|sig", src, re.I):
@@ -126,7 +151,7 @@ def _shop(url: str, page: str) -> BottlingRecord | None:
     img = (prod.get("images") or [{}])[0].get("src")
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=f"{FAMILY} {expression}", source_url=SHOP + handle, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, image_url=img,
+        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, tasting_notes=_shop_notes(prod.get("body_html") or ""), image_url=img,
         aliases=sorted(set(aliases) - {f"{FAMILY} {expression}"}), is_core_range=expression in CORE,
     )
 
@@ -150,6 +175,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=f"{FAMILY} {expression}", source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, image_url=_image(page),
+        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, tasting_notes=_main_notes(own), image_url=_image(page),
         aliases=sorted(set(aliases) - {f"{FAMILY} {expression}"}), is_core_range=expression in CORE,
     )

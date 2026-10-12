@@ -13,7 +13,9 @@ mention, treats a bare "N more" as another mention of the same unit once a first
 treats an unquantified "an additional year" as +1; a real production floor ("aged at least six years"
 under the Bottled-in-Bond Act) is a specific stated fact here, not reused boilerplate, and is trusted.
 Single Barrel is a by-the-barrel purchase program bundling several proof variants on one page, not a
-bottling, and Boot Flask is merchandise; neither is crawled."""
+bottling, and Boot Flask is merchandise; neither is crawled. tasting_notes is the page's own "Tasting Notes" block
+(Nose / Palate / Finish; the Color line, quotes and "Explore Other Expressions" are not taste). Young Gun's block is a
+word-for-word copy of Balmorhea's, so it is left None rather than attributing a sibling's notes to it."""
 from __future__ import annotations
 
 import html
@@ -97,6 +99,20 @@ def _product_schema(page: str) -> dict | None:
     return None
 
 
+COPIED_NOTES = {"young-gun"}  # the page repeats Balmorhea's Nose / Palate / Finish text verbatim
+
+
+def _notes(own: str, slug: str) -> str | None:
+    """Nose / Palate / Finish from the "Tasting Notes" heading (title case; the prose says "tasting notes" in passing)
+    up to its COLOR line. `own` is the page text with tags turned into "|"."""
+    m = re.search(r"Tasting Notes\s*\|\s*NOSE\b(.*?)(?:\|\s*COLOR\b|\|\s*SIP FOR|\|\s*Awards\b|$)", own, re.S)
+    if not m or slug in COPIED_NOTES:
+        return None
+    parts = re.findall(r"\b(NOSE|PALATE|FINISH)\s*\|\s*([^|]+)", "NOSE" + m.group(1))
+    t = " ".join(f"{k.title()}: {v.strip()}" for k, v in parts if v.strip())
+    return t[:900].rsplit(" ", 1)[0] if len(t) > 900 else (t or None)
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -131,5 +147,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         brand_family="Garrison Brothers", expression=expression, name=name,
         source_url=f"https://www.garrisonbros.com/our-babies/{slug}/", proof=proof, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=None, mash_style=None, description=_text(description) or _text(own[:600]),
-        image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=core,
+        tasting_notes=_notes(own, slug), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=core,
     )

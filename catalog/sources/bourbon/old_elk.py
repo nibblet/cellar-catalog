@@ -21,7 +21,8 @@ receiving an additional six months to one year of finishing"), which `normalize.
 label or as the base age respectively — a finish adds only months to a base the maker names, and the page
 says "original age". Punch Cut: "AGED 6–8 YEARS" is a display range, never `age_years`.
 The page-level block is `<title> | <title> | <class> | · | N PROOF | · | N% ALC/VOL | <copy>` — the title
-shows twice (tab, then block) — so each block is found from its proof outward."""
+shows twice (tab, then block) — so each block is found from its proof outward. `tasting_notes` is the block's own TASTING NOTES panel
+(AROMA / TASTE / FINISH, each a headline and a sentence), cut off where the awards strip or the next title begins."""
 from __future__ import annotations
 
 import html
@@ -88,6 +89,37 @@ def _flat(fragment: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+PANEL_END = re.compile(r"^(?:ACCOLADES|JOIN THE HERD|Single Barrel|(?:DOUBLE )?(?:GOLD|PLATINUM|SILVER)\b|BEST |\d)")
+
+
+def _notes(seg: str, titles) -> str | None:
+    """"Aroma: ... Taste: ... Finish: ..." from the panel that follows `| TASTING NOTES` in one bottle's segment."""
+    m = re.search(r"\|\s*TASTING NOTES\s*\|(.*)", seg)
+    if not m:
+        return None
+    parts: dict[str, list[str]] = {}
+    key = None
+    for raw in m.group(1).split("|"):
+        t = raw.strip()
+        if t.upper() in ("AROMA", "TASTE", "FINISH"):
+            key = t.upper()
+            parts[key] = []
+        elif key is None or not t:
+            continue
+        elif (key == "FINISH" and PANEL_END.match(t)) or t in titles:
+            break
+        else:
+            parts[key].append(t.capitalize() if t.isupper() else t)
+    out = []
+    for k, segs in parts.items():
+        text = ""
+        for t in segs:
+            text += (" " if not text or text.endswith(("+", ".", "!")) or t.startswith("+") else ". ") + t
+        if text.strip():
+            out.append(f"{k.capitalize()}: {text.strip().rstrip('.')}.")
+    return " ".join(out)[:900] or None
+
+
 def _images(page: str) -> dict[str, str]:
     out = {}
     for m in re.finditer(r"<img\b[^>]*>", page):
@@ -135,6 +167,6 @@ def parse(url: str, page: str) -> list[BottlingRecord]:
             source_url=url, proof=proof, age_years=years, age_label=label,
             class_raw=titlecase(cls_raw.lower()), mash_raw=MASH_PROSE.get(expression), description=desc,
             image_url=images.get(imgalt.lower()), aliases=sorted(set(aliases) - {f"Old Elk {expression}"}),
-            is_core_range=expression in CORE,
+            is_core_range=expression in CORE, tasting_notes=_notes(seg, set(table)),
         ))
     return out

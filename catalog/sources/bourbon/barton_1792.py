@@ -3,7 +3,9 @@ the root (/high-rye, /full-proof…); each has a paragraph of copy, tasting note
 bottle shot in /img/. The pages rarely state a proof: the flagship Small Batch's is the legal line in
 the footer ("46.85% Alc / Abv. 93.7 Proof"), Full Proof is "bottled at its original 125 barrel entry
 proof" (the one case where entry proof is the bottling proof), Bottled in Bond is 100 by law. The
-rest keep whatever proof the catalog holds. There is no Small Batch page; /our-bourbon stands for it."""
+rest keep whatever proof the catalog holds. There is no Small Batch page; /our-bourbon stands for it.
+`tasting_notes` is the page's own TASTING NOTES paragraph (the Small Batch page has none, so it keeps the flavor-profile
+sentence of its intro; the "limited edition expressions" blurb below it describes the whole range and is never read)."""
 from __future__ import annotations
 
 import html
@@ -55,7 +57,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     flat = html.unescape(re.sub(r"<[^>]+>", "|", re.sub(r"<(script|style|svg|noscript)[^>]*>.*?</\1>", "", page, flags=re.S)))
     flat = re.sub(r"\s+", " ", flat)
     copy = flat.split("TASTING NOTES")[0].split("Buy Online")[-1] if "TASTING NOTES" in flat else ""
-    notes = (re.search(r"TASTING NOTES\|?\s*(.*?)\|", flat) or [None, ""])[1]
+    notes = (re.search(r"TASTING NOTES(?:\s*\|)+\s*([^|]+)", flat) or re.search(r"expressive and elegant flavor profile\.\s*([^|.]+\.)", flat) or [None, ""])[1]
     pf = None
     if slug == "our-bourbon":
         m = re.search(r"(\d{2,3}(?:\.\d+)?) Proof", flat)  # the footer's legal line is the flagship's

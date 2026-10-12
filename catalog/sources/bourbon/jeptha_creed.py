@@ -11,7 +11,8 @@ Age is stated on exactly two pages: the Four Grain copy ("aged at least 4 years"
 title; the Solera page's "10 years of dedication" is an anniversary, not an age, so age is read only
 from the title plus sentences that say "aged". Bottled-in-Bond states no age (the legal 4-year floor is
 not an age statement). Single Barrel Reserve is a program page (three mash bills, no proof) and is not
-crawled. The class is the page's own word, "Bourbon" — no page says "Straight"."""
+crawled. The class is the page's own word, "Bourbon" — no page says "Straight". tasting_notes is the page's own
+NOSE / PALATE / FINISH lines under the mash bill (SIGHT, the colour, is not read), read only after the "Try These Next" carousel is cut off."""
 from __future__ import annotations
 
 import html
@@ -107,10 +108,14 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     img = (re.search(r'property="og:image" content="([^"]+)"', page) or [None, None])[1]
     desc = _text(head.split("Tasting Notes", 1)[-1].split("MASHBILL", 1)[0][:600])
 
+    nose, palate, finish = (re.search(r"\|\s*%s\|\s*([^|]+)" % k, own) for k in ("NOSE", "PALATE", "FINISH"))
+    notes = " ".join(f"{k}: {m.group(1).strip()}" for k, m in (("Nose", nose), ("Palate", palate), ("Finish", finish)) if m) or None
+    notes = notes[:900].rsplit(" ", 1)[0] if notes and len(notes) > 900 else notes
+
     return BottlingRecord(
         brand_family=family, expression=expression, name=name,
         source_url=URL.format(slug), proof=proof, age_years=years, age_label=label,
         class_raw="Bottled-in-Bond Bourbon" if slug == "bottled-in-bond-bourbon" else "Bourbon Whiskey",
         mash_raw=mash_raw, mash_style=_style(parts), description=desc,
-        image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=notes, image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

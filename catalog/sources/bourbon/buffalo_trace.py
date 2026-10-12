@@ -2,7 +2,8 @@
 /our-brands/<brand>/<expression>/, brand index pages one level up. Each bottling page carries a
 brand_title, an h1 (the bottling, often with "AGED N YEARS"), a description_title (the class as
 printed on most pages, a tagline on some), a Proof / Mash / Style block, a description and an
-og:image bottle shot. No prices, and an age only where the label states one.
+og:image bottle shot. No prices, and an age only where the label states one. tasting_notes is the page's own
+"TASTING NOTES" paragraphs (nose, palate, finish); the PROFILE chips, awards and "You may also enjoy" carousel are not read.
 
 The family comes from the URL's brand slug, not the page's brand_title: the Antique Collection and
 Kosher pages print the collection's name where the brand would be."""
@@ -105,6 +106,13 @@ def _grab(page: str, pattern: str) -> str | None:
     return _text(m.group(1)) if m else None
 
 
+def _notes(page: str) -> str | None:
+    """The bottling's own TASTING NOTES block (the h2 and the description div right after it, before PROFILE)."""
+    m = re.search(r'<h2>\s*TASTING NOTES\s*</h2>\s*<div class="description">(.*?)</div>', page, re.S | re.I)
+    t = _text(m.group(1)) if m else None
+    return t[:900].rsplit(" ", 1)[0] if t and len(t) > 900 else t
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.split("/")[4]
     brand_title = _grab(page, r'class="brand_title">(.*?)</div>')
@@ -161,7 +169,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         brand_family=family, expression=expression, name=name, source_url=url,
         proof=pf, age_years=years, age_label=label, class_raw=class_raw,
         mash_raw=mash_raw, mash_style=MASH_BILLS.get((mash_raw or "").lower()),
-        style_raw=style_raw, description=description, image_url=og.group(1) if og else None,
+        style_raw=style_raw, description=description, tasting_notes=_notes(page), image_url=og.group(1) if og else None,
         aliases=sorted(aliases - {name}),
         is_core_range=not (NOT_CORE.search(name) or "ANTIQUE COLLECTION" in brand_title.upper()),
     )

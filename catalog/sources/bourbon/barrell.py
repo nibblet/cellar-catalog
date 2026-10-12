@@ -18,7 +18,12 @@ available", and the landing page already stands in for the series as a whole. Th
 tall (portrait) wixstatic image whose filename's own batch/release number agrees with the current text's
 "Batch N" — pages with no batch number in the text (Foundation, the Gold/Gray Label finishes) accept the
 first tall image unconditionally, and a numbered mismatch (the Whiskey page's hero art still shows the
-prior Batch 004 while the text has moved to Batch 005) means no image rather than a wrong one."""
+prior Batch 004 while the text has moved to Batch 005) means no image rather than a wrong one.
+
+`tasting_notes` is the CURRENT release's own Nose / Palate / Finish (the first such block on the page; the batch history below it
+is older releases, and the Cask Finish Series landing page covers several different finishes, so those pages get None). Each
+part is cut to its first sentences (about 300 characters) so the three fit one note; the Appearance line, the intro paragraph
+over it, the "with a splash of water" paragraph and the press quotes are not read."""
 from __future__ import annotations
 
 import html
@@ -126,6 +131,47 @@ def _image(page: str, spec: str) -> str | None:
     return None
 
 
+SECTION_END = re.compile(
+    r"With (?:a |an )?(?:few |splash|drop|little)[^.:]{0,40}?water|(?:RECENT )?NOTABLE PRESS|\bPRESS\b|Previous|AWARDS|\bBATCH \d")
+PART_CHARS = 300
+
+
+def _tokens_text(own: str) -> str:
+    """The page text with `|` fragments rejoined: a fragment that starts lowercase right after a letter with no space
+    between ("edg| es.") is the rest of the same word."""
+    out, prev_raw = "", ""
+    for raw in own.replace("\u200b", "").split("|"):
+        tok = raw.strip()
+        if not tok:
+            continue
+        glue = out and not prev_raw.endswith(" ") and tok[0].islower() and out[-1].isalpha()
+        out += tok if glue else (" " + tok if out else tok)
+        prev_raw = raw
+    return out
+
+
+def _notes(own: str) -> str | None:
+    txt = _tokens_text(own)
+    m = re.search(r"\bNose\s*:", txt)
+    if not m:
+        return None
+    block = txt[m.start():]
+    end = SECTION_END.search(block)
+    block = block[: end.start()] if end else block
+    parts = re.split(r"\b(Nose|Palate|Finish)\s*:\s*", block)
+    out = []
+    for label, body in zip(parts[1::2], parts[2::2]):
+        sents = re.split(r"(?<=[.!?])\s+", body.strip())
+        kept = ""
+        for sent in sents:
+            if kept and len(kept) + len(sent) + 1 > PART_CHARS:
+                break
+            kept = f"{kept} {sent}".strip()
+        if kept:
+            out.append(f"{label}: {kept[:PART_CHARS + 120]}")
+    return " ".join(out) or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     path = url.rstrip("/").split("/")[-1]
     if path not in REFILE:
@@ -150,6 +196,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Barrell", expression=expression, name=name, source_url=url, proof=proof, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=mash_raw, mash_style=None,
-        description=_text(spec[:600]), image_url=img,
+        description=_text(spec[:600]), tasting_notes=_notes(own), image_url=img,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

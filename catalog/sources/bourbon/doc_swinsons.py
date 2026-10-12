@@ -30,7 +30,12 @@ pages carry only a hero photo and get no image. Solera Method Rye (Core Collecti
 link `/alter-ego-rye-library` 404s and only a sales-sheet PDF exists, so it is neither added nor matched.
 Lost Nectar is a rum and is skipped. Past Exploratory releases (the "Whiskey Archives") are still on
 the maker's site with proofs and are imported; a page that is merely sold out is still the maker's
-standing statement of the bottling."""
+standing statement of the bottling.
+
+`tasting_notes` is the current release's own "TASTING NOTES" / "SENSORY NOTES" section (a plain list, or Nose / Palate /
+Finish lines), read only from the first batch block so an older batch's notes are never borrowed (the 15 Year's current
+batches print none; the only notes on the page are Batch 6's). A page with no such section keeps just the sentences of
+its intro that say what the whiskey smells or tastes like."""
 from __future__ import annotations
 
 import html
@@ -148,6 +153,47 @@ def _age(intro: str, block: str) -> tuple[float | None, str | None]:
     return None, None
 
 
+_NOTES_LABEL = re.compile(r"^(?:tasting|sensory) notes\s*:?$", re.I)
+_SUBLABEL = re.compile(r"^(nose|aroma|palate|finish)\s*(?:[:\-–]\s*(?:-\s*)?(.*))?$", re.I)
+_SENSORY = re.compile(r"\b(?:notes of|aromas of|aromatics|palate|on the nose)\b", re.I)
+
+
+def _is_label(seg: str) -> bool:
+    """Where a plain notes list ends: an upper-case heading ("HOW TO ENJOY", "AWARDS:"), the next batch, or page chrome."""
+    letters = re.sub(r"[^A-Za-z]", "", seg)
+    if len(letters) >= 5 and seg.upper() == seg and not _SUBLABEL.match(seg):
+        return True
+    return seg.startswith(("Batch ", "Exploratory Cask Release", "←", "→", "Find ", "Previous", "Written By"))
+
+
+def _tasting(block: str, intro: str) -> str | None:
+    segs = [x.strip() for x in block.split("|") if x.strip()]
+    for i, seg in enumerate(segs):
+        if not _NOTES_LABEL.match(seg):
+            continue
+        body = segs[i + 1:]
+        if body and _SUBLABEL.match(body[0]):
+            # Nose / Palate / Finish: each label owns one value (inline, or the next segment). The paragraph after the
+            # last one can be a "try our other bottles" cross-sell, so nothing past the last value is read.
+            parts, k = [], 0
+            while k < len(body) and _SUBLABEL.match(body[k]):
+                m = _SUBLABEL.match(body[k])
+                value, k = (m.group(2), k + 1) if m.group(2) else (body[k + 1].lstrip("- ") if k + 1 < len(body) else "", k + 2)
+                if value.strip():
+                    parts.append(f"{m.group(1).title()}: {value.strip().rstrip('. ')}.")
+            return " ".join(parts)[:900] or None
+        plain = []
+        for x in body:
+            if _is_label(x):
+                break
+            plain.append(x)
+        text = re.sub(r"\s+", " ", " ".join(plain)).strip()
+        return (text.rstrip(".") + ".")[:900] if text else None  # empty: this batch printed no notes (a later batch's are not ours)
+    prose = _text(re.sub(r"^.*?\bWritten By\b[^|]*\|[^|]*\|", "", intro)) or ""
+    keep = [x for x in re.split(r"(?<=[.!?])\s+", prose) if _SENSORY.search(x)]
+    return " ".join(keep)[:900] or None
+
+
 def _image(page: str) -> str | None:
     for m in re.finditer(r"<img[^>]*>", page):
         t = m.group(0)
@@ -185,6 +231,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=f"https://www.docswhiskey.com/{slug}",
         proof=proof, age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw,
-        mash_style="rye" if rye else None, description=(desc or "")[:500] or None, image_url=_image(page), finish=finish,
+        mash_style="rye" if rye else None, description=(desc or "")[:500] or None, tasting_notes=_tasting(block, intro), image_url=_image(page), finish=finish,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

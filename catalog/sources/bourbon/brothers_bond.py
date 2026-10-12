@@ -31,7 +31,9 @@ sale of the standard bottle, not a bottling) and every non-whiskey product.
 Class: the rye's name carries the word "Blended" (four mash bills barrel-blended); its class is rye whiskey, not a
 cross-type blend, so class_raw says "Rye Whiskey" (a "blend" in class_raw would send spirit_type() to 'blend').
 Mash style: the Straight Bourbon page calls itself "a four-grain, high-rye straight bourbon" and the Regenerative Grain
-page "four-grain", so both are four_grain (normalize reads that phrase first); the others follow their recipe."""
+page "four-grain", so both are four_grain (normalize reads that phrase first); the others follow their recipe.
+`tasting_notes` is the page's own numbered "Tasting Notes" tiles ("01 | BAKED BANANA BREAD | ..."; the tile list is printed
+twice, so each number is read once), not the blurb, the Details block or the "You May Also Like" bottles."""
 from __future__ import annotations
 
 import html
@@ -91,6 +93,46 @@ def _product(own: str) -> str:
     return seg[:end] if end > 0 else seg
 
 
+def _notes(own: str) -> str | None:
+    """'Tasting Notes | 01 | TITLE | text | 02 | ...' up to the cocktails; the list repeats (mobile copy), so stop at a repeated number."""
+    i = own.find("| Tasting Notes |")
+    if i < 0:
+        return None
+    seg = own[i + len("| Tasting Notes |"):]
+    for end in ("| Cocktail Recipes", "| You May Also Like"):
+        j = seg.find(end)
+        if j > 0:
+            seg = seg[:j]
+    toks = [t.strip() for t in seg.split(" | ") if t.strip()]
+    items, seen, texts = [], set(), set()
+    k = 0
+    while k < len(toks):
+        if re.fullmatch(r"\d{2}", toks[k]) and k + 2 < len(toks):
+            if toks[k] in seen:
+                break
+            seen.add(toks[k])
+            title, k = toks[k + 1], k + 2
+            body = []
+            while k < len(toks) and not re.fullmatch(r"\d{2}", toks[k]):
+                body.append(toks[k])
+                k += 1
+            title = title.title() if title.isupper() else title
+            text = " ".join(body).strip()
+            if not text or text in texts:  # a tile whose text repeats the one above it adds only its title
+                items.append(title.rstrip(".") + ".")
+            else:
+                texts.add(text)
+                items.append(f"{title.rstrip('.')}: {text}")
+        else:
+            k += 1
+    out = ""
+    for it in items:
+        if len(out) + len(it) + 1 > 900:
+            break
+        out = f"{out} {it}".strip()
+    return out or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = urllib.parse.unquote(url.rstrip("/").split("/")[-1])
     if handle not in PAGES:
@@ -117,5 +159,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Brother's Bond", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, mash_style=style,
-        image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=_notes(_flat(page)), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

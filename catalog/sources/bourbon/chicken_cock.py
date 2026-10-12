@@ -11,7 +11,11 @@ still the maker's own current statement of the bottling's specs, same as any oth
 Eight one-off retailer single-barrel selections (Field Ethos, Garden Gun, Ampal, Criquet, the New Orleans
 Bourbon Festival cask, Miller's Reserve, Ryeteous Blonde) and a private-cask program page are not
 crawled — too many one-off store picks to be "most available", the same call made for other makers'
-single-barrel programs."""
+single-barrel programs.
+
+`tasting_notes` is the "Tasting Notes" panel (Nose or Aroma / Palate / Finish lines) that follows the price; it stops at the
+first line that is not a label and its value, so the review form and customers' reviews after it are never read. Old Glory
+and the 15 Year print the heading with no notes under it and keep none."""
 from __future__ import annotations
 
 import html
@@ -61,6 +65,22 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+_NOTE_LABELS = {"nose", "aroma", "palate", "taste", "finish"}
+
+
+def _tasting(own: str) -> str | None:
+    segs = [x.strip() for x in own.split("|") if x.strip()]
+    start = next((i for i, x in enumerate(segs) if x == "Tasting Notes"), None)
+    if start is None:
+        return None
+    parts, j = [], start + 1
+    while j + 1 < len(segs) and segs[j].lower() in _NOTE_LABELS:
+        value = re.sub(r"\bavors\b", "flavors", re.sub(r"\bnish\b", "finish", segs[j + 1]))  # the Red Stave page lost its fi/fl ligatures
+        parts.append(f"{segs[j].title()}: {value.rstrip('. ')}.")
+        j += 2
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -93,6 +113,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Chicken Cock", expression=expression, name=name,
         source_url=f"https://chickencockwhiskey.com/whiskey/{slug}/", proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc,
+        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc, tasting_notes=_tasting(own),
         image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

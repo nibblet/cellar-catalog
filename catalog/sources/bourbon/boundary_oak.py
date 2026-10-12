@@ -34,7 +34,8 @@ Naming: each brand is its own family (Lincoln already is). The page titles are t
 "Lady Victory"' is filed 'Big Red 1'. Class is read from the page's own words: Lincoln, Patton and Big Red 1 print
 their class; War Eagle ("this exceptional Kentucky bourbon"), St. Michael ("A bourbon whiskey to celebrate") and Iron
 Mike ("this bourbon honors") state it in the opening sentence, so their class is "Bourbon Whiskey" (not "Straight":
-the pages never say straight)."""
+the pages never say straight).
+tasting_notes is the "Tasting Notes:" line each page ends its own copy with (the opening paragraph is marketing)."""
 from __future__ import annotations
 
 import html
@@ -98,6 +99,11 @@ def _image(page: str, pattern: str) -> str | None:
     return None
 
 
+def _tasting(own: str) -> str | None:
+    m = re.search(r"Tasting Notes:\s*\|\s*([^|]+)", own)
+    return re.sub(r"\s+", " ", m.group(1)).strip()[:900] or None if m else None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -123,6 +129,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, image_url=_image(page, image_pat),
+        age_years=years, age_label=label, class_raw=class_raw, tasting_notes=_tasting(own), image_url=_image(page, image_pat),
         aliases=sorted(set(aliases) - {name}), is_core_range=family in CORE,
     )

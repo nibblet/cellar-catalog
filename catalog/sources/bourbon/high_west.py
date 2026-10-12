@@ -32,7 +32,9 @@ Ages: the maker states a minimum for the blends ("aged a minimum of two years"),
 ranges ("6–20 years", "4 to 10 years") are labels only; "10+" is a label. A copy line that restates the
 Bottled-in-Bond Act ("Must be aged a minimum of 4 years") is the law's floor, not an age, and is stripped.
 Cask Strength's ship page pastes the 2024 back-label ("bourbon and rye, 6–10 years") under the 2025
-description; only the description (above "Bottle Details") is read for age and class."""
+description; only the description (above "Bottle Details") is read for age and class.
+tasting_notes is the page's own "Sensory Notes" block (Nose / Palate or Taste / Finish) on the ship pages and under each limited
+release's heading on the limited-releases page; the compliance-list bottles (Noble Share, Valley Tan, ...) have none."""
 from __future__ import annotations
 
 import html
@@ -166,12 +168,26 @@ def _desc(text: str | None, n: int = 600) -> str | None:
     return text[:n].strip() if text else None
 
 
-def _record(expression, source_url, proof, age_years, age_label, mash_raw, desc, image, finish=None, aliases=()):
+def _sensory(chunk: str | None) -> str | None:
+    """'Nose: ... Palate: ... Finish: ...' from a Sensory Notes block, whatever the line breaks ('|') and label style
+    ('Nose:' / 'NOSE:' / a bare 'Nose' cell) the page uses."""
+    if not chunk:
+        return None
+    t = re.sub(r"\s+", " ", chunk.replace("|", " "))
+    parts = []
+    for key, body in re.findall(r"(?<!\w)(Nose|NOSE|Palate|PALATE|Taste|TASTE|Finish|FINISH)\s*:?\s+(.*?)(?=\s(?:Nose|NOSE|Palate|PALATE|Taste|TASTE|Finish|FINISH)\b|$)", t):
+        body = re.sub(r"\s+Great in cocktails.*$", "", body).strip(" ,;")  # the flagship's serving line sits right after its Finish
+        if body:
+            parts.append(f"{key.title()}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    return " ".join(parts)[:900] or None
+
+
+def _record(expression, source_url, proof, age_years, age_label, mash_raw, desc, image, finish=None, aliases=(), tasting=None):
     name = NAME_OVERRIDE.get(expression) or f"High West {expression}"
     return BottlingRecord(
         brand_family="High West", expression=expression, name=name, source_url=source_url, proof=proof,
         age_years=age_years, age_label=age_label, class_raw=CLASS[expression], mash_raw=mash_raw, description=desc,
-        image_url=image, finish=finish, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=tasting, image_url=image, finish=finish, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )
 
 
@@ -219,7 +235,9 @@ def _parse_ship(url: str, page: str) -> BottlingRecord | None:
         mash_raw = re.sub(r"\s*\|\s*", " ", mash_raw)
 
     finish = "Port and Sherry Barrels" if expression == "A Midwinter Night's Dram" else None
-    return _record(expression, f"{SHIP}{handle}", proof, years, label, mash_raw, _desc(head.strip(" |")), _og_image(page), finish, aliases)
+    sm = re.search(r"Sensory Notes\s*\|(.*?)\|\s*(?:Mash Bill|Technical Information|Back Label Story)", own, re.S)
+    return _record(expression, f"{SHIP}{handle}", proof, years, label, mash_raw, _desc(head.strip(" |")), _og_image(page), finish, aliases,
+                   _sensory(sm.group(1) if sm else None))
 
 
 def _parse_limited(page: str) -> list[BottlingRecord]:
@@ -232,7 +250,8 @@ def _parse_limited(page: str) -> list[BottlingRecord]:
             continue
         later = [j for _, j in heads if j > i] + ([stop] if stop > i else [])
         block = t[i + len(h) + 3:min(later) if later else None]
-        copy = block.split("SENSORY NOTES")[0]
+        copy, _, notes = block.partition("SENSORY NOTES")
+        notes = notes.split("HOW TO DRINK")[0]
         expression = LIMITED_BOTTLES[h]
         pm = re.search(r"\b(\d{2,3}(?:\.\d+)?)\s*proof\b", copy, re.I)
         proof = float(pm.group(1)) if pm else None
@@ -249,7 +268,7 @@ def _parse_limited(page: str) -> list[BottlingRecord]:
         else:
             years, label = age(copy)
         mash_raw = "High-Rye Mash Bill" if re.search(r"high[- ]rye", copy, re.I) else None
-        rec = _record(expression, LIMITED_URL, proof, years, label, mash_raw, _desc(_text(copy.replace("|", " "))), None)
+        rec = _record(expression, LIMITED_URL, proof, years, label, mash_raw, _desc(_text(copy.replace("|", " "))), None, tasting=_sensory(notes))
         if mash_raw:
             rec.mash_style = "high_rye"
         out.append(rec)

@@ -10,7 +10,12 @@ cask strength, no fixed figure); Velarde's two-barrel blend ("Barrel 1: 4+ Yrs /
 has no single age to state and is left unread rather than guessed. Single-barrel and numbered-batch
 drops (Cavehill Queen, Heigold Alice, WBSC Sonia, ...) and the Boxergrail/Revera Founder's/Distillery
 entries with `body_html: null` state nothing at all and are not crawled — the store's own `product_type`
-field lumps Bespoke Gin and Liddel Vodka in with "Whiskey", so scope is the REFILE table, not the type."""
+field lumps Bespoke Gin and Liddel Vodka in with "Whiskey", so scope is the REFILE table, not the type.
+
+`tasting_notes` is the product's own tasting text, in the first of three shapes the body has: a "TASTING NOTES" block (the four
+core pages quote Whiskey Advocate there; Amburana, Mizunara and Adourra have their own), else labelled Aroma / Palate / Finish
+(or Nose / Taste / Finish) lines, else the prose sentences that name aromas and flavors. The DESCRIPTION, STORY, food pairings,
+shipping and "Distillery Series" boilerplate that sit beside them are never read."""
 from __future__ import annotations
 
 import html
@@ -83,6 +88,53 @@ def _flatten(body_html: str | None) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+def _join(tokens: list[str]) -> str:
+    """Space-join `|` fragments, gluing the one-letter drop-cap splits ("T| obacco") back together."""
+    out = ""
+    for t in (x.strip() for x in tokens):
+        if not t or t == ":":
+            continue
+        glue = re.search(r"(?:^|\s)[A-HJ-Z]$", out) and t[0].islower()
+        out += t if glue else (" " + t if out else t)
+    return out
+
+
+LABELS = {"aroma": "Aroma", "aromas": "Aroma", "nose": "Nose", "palate": "Palate", "taste": "Taste", "finish": "Finish"}
+SENSORY = re.compile(r"\b(?:aromas? of|scents? of|nose of|each sip|palate of|fades? into|finish(?:es)? (?:of|with|into))\b", re.I)
+
+
+def _notes(own: str) -> str | None:
+    """A TASTING NOTES block, else the Aroma / Palate / Finish lines, else the sentences that name aromas and flavors."""
+    m = re.search(r"\|\s*TASTING NOTES:?\s*\|(.*?)(?=\|\s*(?:STORY|DESCRIPTION|Numbered Limited Edition)\b|$)", own, re.I)
+    if m:
+        text = _join(m.group(1).split("|"))
+        if re.search(r"\s*-\s*[\"“]?Whiskey Advocate[\"”]?\s*$", text):  # a critic's quote, not the maker's words: stored under the maker's name it would misattribute
+            return None
+        return text[:900] or None
+    parts: dict[str, list[str]] = {}
+    key = None
+    for raw in own.split("|"):
+        t = raw.strip()
+        label = LABELS.get(t.rstrip(":").strip().lower())
+        if label and (t.endswith(":") or t.isupper() or t[:1].isupper()):
+            key = label
+            parts.setdefault(key, [])
+        elif key and re.match(r"(?:DETAILS|Details|Mash Bill|AVAILABLE|Proof)", t):
+            break
+        elif key and t:
+            parts[key].append(t)
+    out = []
+    for k, toks in parts.items():
+        v = _join(toks).strip().rstrip(" .,")
+        if v:
+            out.append(f"{k}: {v}.")
+    if out:
+        return " ".join(out)[:900]
+    text = _join(own.split("|"))
+    sents = [x for x in re.split(r"(?<=[.!?])\s+", text) if SENSORY.search(x)]
+    return " ".join(sents)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = url.rstrip("/").split("/")[-1].removesuffix(".json")
     if handle not in REFILE:
@@ -126,5 +178,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Rabbit Hole", expression=expression, name=name, source_url=f"https://www.rabbitholedistillery.com/products/{handle}",
         proof=proof, age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, mash_style=mash_style,
-        description=desc, image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        description=desc, tasting_notes=_notes(own), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

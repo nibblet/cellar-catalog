@@ -19,7 +19,11 @@ Age comes only from the title ("7yr", "15yr"); the flagship, True Cask and Rye a
 about seven years", which is NAS plus an average, not an age. The 11yr Sherry Cask malt is nav-listed but its link
 leads to the Sherry Cask Finished *Bourbon* page (the heading names the bottling, so the bourbon is read). The
 17yr Archive Series page still reads "Only XXX bottles", a draft placeholder, but states 17 years and bottled-in-bond
-100 proof like its siblings. Mash bills print as "72% Corn / 15% Rye / 13% Malted Barley" or "Blended mash bills"."""
+100 proof like its siblings. Mash bills print as "72% Corn / 15% Rye / 13% Malted Barley" or "Blended mash bills".
+`tasting_notes` is the sentences of the product copy that describe flavor, aroma, palate or finish (the pages have no
+labelled tasting block); the press-quote paragraphs ("2021 BTI // ...") and the single-barrel pages' "shares a
+familiar foundation with our ..." line are not this bottle's notes, and the 17yr draft page that repeats the 16yr's
+aromas is left None."""
 from __future__ import annotations
 
 import html
@@ -86,6 +90,38 @@ def _text(frag: str | None) -> str | None:
     return t or None
 
 
+# A sentence of the product copy counts when it names a taste; an "Aged ..." / "Bottled at ..." lead-in clause is dropped
+# when the taste starts after it. Quote and award paragraphs start with a year.
+TASTE_CUE = re.compile(r"flavou?r profile|tasting profile|profile (?:of|featuring)|with flavou?rs of|rich flavou?r of|aromas? of|\bpalate\b|\bshowcasing\b", re.I)
+NOT_THIS_BOTTLE = re.compile(r"familiar foundation", re.I)
+
+
+def _notes(page: str) -> str | None:
+    if "Only XXX" in page:  # the 17yr draft page repeats the 16yr's aroma / palate / finish verbatim
+        return None
+    q = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", page, flags=re.S)
+    paras = [re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", x)).replace("\xa0", " ").replace("’", "'")).strip()
+             for x in re.findall(r"<p[^>]*>(.*?)</p>", q, flags=re.S)]  # tags dropped without a gap: drop-cap spans split words
+    out: list[str] = []
+    for para in paras:
+        if para.startswith("Mash Bill"):
+            break
+        if re.match(r"\d{4} ", para):
+            continue
+        para = re.sub(r"(?<![.!?]) (The palate\b)", r". \1", para)  # the 16yr page runs its sentences together
+        para = para.split(" Rich, robust")[0]
+        for sent in re.split(r"(?<=[.!?])\s+(?=[A-Z])", para):
+            m = TASTE_CUE.search(sent)
+            if not m or NOT_THIS_BOTTLE.search(sent):
+                continue
+            lead, comma, rest = sent.partition(", ")
+            if comma and m.start() > len(lead) and re.match(r"(?:Aged|Bottled)\b", lead):
+                sent = rest[:1].upper() + rest[1:]
+            sent = sent.split(", earning ")[0]
+            out.append(sent.rstrip(" ,;") + ("" if sent.rstrip().endswith((".", "!", "?")) else "."))
+    return " ".join(out)[:900] or None
+
+
 def _image(page: str) -> str | None:
     for m in re.finditer(r'<img[^>]*(?:data-orig-src|src)="(https://lexingtonbrewingco\.com/wp-content/uploads/[^"]+\.(?:png|jpe?g))"[^>]*class="[^"]*img-responsive', page):
         if "Seals" not in m.group(1):
@@ -140,5 +176,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Town Branch", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, finish=FINISH.get(expression),
-        description=pitch, image_url=_image(page), aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        description=pitch, tasting_notes=_notes(page), image_url=_image(page), aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

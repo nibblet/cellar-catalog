@@ -4,7 +4,8 @@ Straight Bourbon"), an ABV line ("47.2% ALC./VOL", or "ALC./VOL VARIES"), a desc
 ("BOTTLING STRENGTH | 94.4 proof (47.2% Alcohol by Volume)") and one straight-on bottle shot. Barrel
 strength pages give a "BARRELING STRENGTH | 103 Proof" (entry proof, ignored) and either a range for
 the year's release (no proof) or its average (taken). The Legacy Series pages (Bomberger's, Shenk's)
-and Celebration stack one block per year, newest first; the first block is the current release."""
+and Celebration stack one block per year, newest first; the first block is the current release.
+tasting_notes is that block's own "TASTING NOTES" paragraph, or the Legacy Series' NOSE / PALATE / FINISH lines (APPEARANCE is a colour)."""
 from __future__ import annotations
 
 import html
@@ -72,6 +73,20 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+def _tasting(own: str) -> str | None:
+    """`own` is the current release's block (cut before the older years and the sibling-whiskey links)."""
+    m = re.search(r"TASTING NOTES\| ([^|]+)", own, re.I)
+    if m:
+        return (_text(m.group(1)) or "")[:900] or None
+    parts = []
+    for key in ("NOSE", "PALATE", "FINISH"):
+        m = re.search(rf"\| {key}\| ([^|]+)", own)
+        body = _text(m.group(1)).rstrip(" ,;") if m else None
+        if body:
+            parts.append(f"{key.title()}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = urlparse(url).path.strip("/")
     slug = re.sub(r"^celebration-sour-mash-\d{4}$", "celebration-sour-mash", slug)
@@ -116,7 +131,8 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     finish = "Toasted Barrel" if "Toasted Barrel" in expression else None
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, image_url=html.unescape(img) if img else None, finish=finish,
+        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, tasting_notes=_tasting(own),
+        image_url=html.unescape(img) if img else None, finish=finish,
         aliases=sorted({*aliases, *([h2.replace("★", "*"), h2] if h2 else [])} - {name}),
         is_core_range=not NOT_CORE.search(name),
     )

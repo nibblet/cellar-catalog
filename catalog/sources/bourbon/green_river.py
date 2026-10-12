@@ -11,7 +11,10 @@ Toasted Double Oak says "After aging eight years" (present participle, not `norm
 1885 states "aged four years" plainly, and both Single Barrel pages state "aged a minimum of/over five
 years" with proof left as "Proof Varies by Barrel" since cask strength differs bottle to bottle — the
 maker's own single-barrel policy statement, not a legal floor, so it's trusted the same as any other
-stated age."""
+stated age.
+
+`tasting_notes` is the page's own "tasting notes" block: its Taste and Finish lines (the Appearance line is left out). The
+honey-finished whiskey prints no such block, so it stays None."""
 from __future__ import annotations
 
 import html
@@ -57,6 +60,17 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+def _tasting_notes(own: str) -> str | None:
+    """`tasting notes | Taste | ... | appearance | ... | finish | ...` up to the page's next section."""
+    m = re.search(r"tasting notes\s*\|", own, re.I)
+    if not m:
+        return None
+    zone = re.split(r"Find Green River Near You|LINKS\b|FREQUENTLY ASKED", own[m.end():], maxsplit=1)[0]
+    got = [(label, _text(v.group(1))) for label, pat in (("Taste", r"Taste\s*\|\s*([^|]+)"), ("Finish", r"finish\s*\|\s*([^|]+)"))
+           if (v := re.search(pat, zone, re.I))]
+    return " ".join(f"{label}: {text.rstrip('.')}." for label, text in got if text)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -95,5 +109,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         brand_family="Green River", expression=expression, name=name,
         source_url=f"https://greenriverwhiskey.com/{slug}/", proof=proof, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc,
-        image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=_tasting_notes(own), image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

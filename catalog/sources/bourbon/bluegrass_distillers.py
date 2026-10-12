@@ -22,6 +22,8 @@ and almost never prints a proof, so very little can be confirmed:
   matches that seed by name instead of surfacing as a stale row plus a proof-less addition.
 * Skipped: Blue Dog Whiskey (a distillery-exclusive blue-corn whiskey "aged less than 30 days", no
   proof); the generic Elkwood Reserve and Elkwood Reserve Kentucky Straight Bourbon Whiskey pages.
+* tasting_notes is the page's own Aroma / Taste / Finish lines (the shared Mash Bill Series blurb and the Summary are
+  not read); the few pages with no such lines fall back to their one-paragraph copy when it describes flavor.
 """
 from __future__ import annotations
 
@@ -93,6 +95,22 @@ def _own(page: str) -> str:
     return t[:min(cut)] if cut else t
 
 
+def _tasting(own: str) -> str | None:
+    parts = []
+    for key in ("Aroma", "Taste", "Finish"):
+        m = re.search(rf"\| {key}\| ([^|]+)", own)
+        body = m.group(1).strip().rstrip(" ,;") if m else ""
+        if body and not re.match(r"coming\b", body, re.I):  # "coming …" is the page's placeholder
+            parts.append(f"{key}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    if parts:
+        return " ".join(parts)[:900]
+    if "Summary|" in own:
+        return None
+    copy = re.sub(r"\s*\|\s*", " ", own.split("|", 1)[-1]).replace("Shop Online", "").replace("Find a Store Near You", "").strip()
+    flavor = [x for x in re.split(r"(?<=[.!])\s+", copy) if re.search(r"notes of|flavors?|profile|sweetness", x, re.I)]
+    return " ".join(flavor)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -128,6 +146,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, description=desc, image_url=html.unescape(img) if img else None,
-        aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        class_raw=class_raw, mash_raw=mash_raw, description=desc, tasting_notes=_tasting(own),
+        image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

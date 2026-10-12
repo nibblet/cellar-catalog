@@ -31,7 +31,10 @@ Not imported, and why:
   Old Anvil (Legacy Collection, 375 mL, 11 Summers, 119.4) and Mellwood Bottled in Bond (100): other families (Mellwood
   already has one seed row) — a follow-up, not Pursuit United's family.
 - Oak Collection Rye (Sherry Revere Rye, 108): live but unlinked, so history. The seeded bourbon 'The Oak Collection'
-  has no page that names it and stays a seed."""
+  has no page that names it and stays a seed.
+
+`tasting_notes` is the page's own "Tasting Notes" panel (NOSE / TASTE / FINISH), which ends at the awards strip or the
+batch-decoder link; the product pitch above the spec sheet is marketing copy and is not read."""
 from __future__ import annotations
 
 import html
@@ -106,6 +109,22 @@ def _mash_style(own: str, spirit_rye: bool) -> str | None:
     return None
 
 
+def _notes(own: str) -> str | None:
+    m = re.search(r"Tasting Notes\|(.*?)(?=\|\s*(?:Awards \+ Accolades|Pursuit United Batch)|$)", own)
+    if not m:
+        return None
+    parts: dict[str, list[str]] = {}
+    key = None
+    for tok in (t.strip() for t in m.group(1).split("|")):
+        if tok in ("NOSE", "TASTE", "FINISH"):
+            key = tok.capitalize()
+            parts[key] = []
+        elif key and tok:
+            parts[key].append(tok)
+    out = [f"{k}: {' '.join(v)}" for k, v in parts.items() if v]
+    return " ".join(out)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -124,6 +143,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family="Pursuit United", expression=expression, name=name, source_url=url, proof=proof,
-        class_raw=class_raw, mash_raw=None, mash_style=_mash_style(own, class_raw == RYE), finish=finish, image_url=img,
+        class_raw=class_raw, mash_raw=None, mash_style=_mash_style(own, class_raw == RYE), finish=finish, tasting_notes=_notes(own), image_url=img,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

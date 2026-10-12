@@ -31,7 +31,10 @@ Judgments carried here so a re-run reproduces them:
 - Double Cask is "a bourbon" for five years, then finished in Pedro Ximenez sherry casks: class is bourbon, finish carried.
 - Barrel Strength is listed at 8 years / 122.4 proof; the seed (a 2024 batch review) said 10 years / 121. The maker's current
   page wins, like Booker's: the row drifts with each release.
-- No page states a mash bill; none is stored."""
+- No page states a mash bill; none is stored.
+- `tasting_notes` is the page's own Nose / Taste-or-Palate / Finish block (`product-overview__notes`; the Color line is left out).
+  Five pages (Single Barrel, National Parks No. 1 and No. 2, Barrel Strength, 10 Year Anniversary) print the identical
+  Single-Barrel-style block, at 92 to 122 proof, which is copy carried over from a sibling, so it is not taken as theirs."""
 from __future__ import annotations
 
 import html
@@ -80,6 +83,20 @@ def _text(fragment: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
 
 
+REPEATED_NOSE = "browned butter, cola, black currant and dried dates"  # the block those five pages share
+
+
+def _tasting_notes(page: str) -> str | None:
+    """The product overview's note rows (`<h4>Nose</h4><p>...</p>`), minus Color; None for the block a sibling page repeats."""
+    block = re.search(r'product-overview__notes">(.*?)<span class="mountain-range"', page, re.S)
+    rows = re.findall(r"<h4[^>]*>(.*?)</h4>\s*<p[^>]*>(.*?)</p>", block.group(1), re.S) if block else []
+    notes = [(_text(label).title(), _text(text)) for label, text in rows]
+    notes = [(label, text) for label, text in notes if text and label in ("Nose", "Taste", "Palate", "Finish")]
+    if any(label == "Nose" and text.lower() == REPEATED_NOSE for label, text in notes):
+        return None
+    return " ".join(f"{label}: {text.rstrip('.')}." for label, text in notes)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -97,7 +114,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     img = re.search(r'<img[^>]+src="([^"]+)"', media.group(1)) if media else None
     return BottlingRecord(
         brand_family="Wyoming Whiskey", expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, finish=finish,
+        age_years=years, age_label=label, class_raw=class_raw, finish=finish, tasting_notes=_tasting_notes(page),
         image_url=urljoin(url, img.group(1)) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

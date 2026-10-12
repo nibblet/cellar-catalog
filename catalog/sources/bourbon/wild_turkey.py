@@ -3,7 +3,9 @@ product page carries a schema.org Product (name, description; Russell's also the
 in a PROCESS teaser ("101 proof aged between 6-8 years", "112.8 Barrel proof, 6-, 8-, and 12-year
 blend") or the copy ("bottled at 90 proof"). Wild Turkey's page hero is a lifestyle shot; its bottle
 shots come from the product sitemap's image entries. The Single Rickhouse page is whichever release is
-current, named by its h1. American Honey is a liqueur and is skipped."""
+current, named by its h1. American Honey is a liqueur and is skipped.
+`tasting_notes` is the page's own tasting block: the "Tasting Notes" paragraph when there is one, then its Aroma / Taste
+(or Palate) / Finish lines; the "More to discover" and "Our products" carousels of sibling bottles are never read."""
 from __future__ import annotations
 
 import html
@@ -94,6 +96,36 @@ def _product(page: str) -> dict | None:
     return None
 
 
+TASTE_LABELS = {"aroma", "nose", "taste", "palate", "finish"}
+SKIP_LABELS = {"color", "proof"}
+TASTE_WORDS = re.compile(r"\b(?:aromas?|nose|palate|taste|flavors?|finish(?:es)?|notes? of)\b", re.I)
+
+
+def _tasting(page: str) -> str | None:
+    """The first run of labelled lines (Color / Proof are skipped, not kept) that has at least two taste labels, plus the
+    "Tasting Notes" paragraph right before it. The run ends at the first segment that is not a label and its value."""
+    flat = html.unescape(re.sub(r"<[^>]+>", "|", re.sub(r"<(script|style|svg|noscript)[^>]*>.*?</\1>", "", page, flags=re.S)))
+    segs = [re.sub(r"\s+", " ", x.replace("\xa0", " ").replace("\u200b", "").replace("’", "'")).strip() for x in flat.split("|")]
+    segs = [x for x in segs if x]
+    for i, seg in enumerate(segs):
+        if seg.lower() not in TASTE_LABELS | SKIP_LABELS:
+            continue
+        pairs, j = [], i
+        while j + 1 < len(segs) and segs[j].lower() in TASTE_LABELS | SKIP_LABELS:
+            if segs[j].lower() in TASTE_LABELS:
+                pairs.append((segs[j].title(), re.sub(r"^Meta Desc:\s*", "", segs[j + 1])))  # a CMS field name leaks into one page
+            j += 2
+        if len(pairs) < 2:
+            continue
+        lead = []
+        k = i - 1
+        if k >= 1 and segs[k - 1].lower() == "tasting notes" and TASTE_WORDS.search(segs[k]):  # Single Rickhouse files its story there
+            lead = [segs[k]]
+        parts = [x.rstrip(" .") + "." for x in lead] + [f"{label}: {text.rstrip(' .')}." for label, text in pairs]
+        return " ".join(parts)[:900]
+    return None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     host = urlparse(url).netloc
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
@@ -158,6 +190,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=None, mash_style="rye" if class_raw.startswith("Kentucky Straight Rye") else None,
-        description=description, image_url=img or None,
+        description=description, tasting_notes=_tasting(page), image_url=img or None,
         aliases=sorted({*aliases, *([titlecase(name_raw) if name_raw.isupper() else name_raw] if name_raw else [])} - {name}), is_core_range=not NOT_CORE.search(name),
     )

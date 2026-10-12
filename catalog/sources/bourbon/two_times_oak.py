@@ -5,8 +5,13 @@ shot whose label cannot be read. The one exception is American Oak: its page's p
 glass), read by hand; proof is ABV x 2 = 92, which also matches the seeded value. The module uses it only
 while that same image is still on the cached page. The other products (French Oak, Gem of Kentucky, Kiawah,
 Tribute, Innkeeper's, Phoenix, Vinyl, Sneakerhead, Hip-Hop) are listed so a future proof is picked up but
-state nothing today."""
+state nothing today. `tasting_notes` is the page's own palate line (the "moves from sweet ... finishing with" sentence of
+the intro) plus its Tasting Notes block: Nose / Taste / Finish tabs on most pages, one paragraph on Gem of Kentucky. The
+"What's New" press links below it are other articles and are never read."""
 from __future__ import annotations
+
+import html
+import re
 
 from ...bourbon.model import BottlingRecord
 
@@ -35,6 +40,28 @@ def list_urls(fetcher) -> list[str]:
     return [f"https://2xowhiskey.com/{slug}/" for slug in PAGES]
 
 
+def _clean(fragment: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment)).replace("\xa0", " ").replace("’", "'")).strip()
+
+
+def _notes(page: str) -> str | None:
+    """The intro's palate sentence, then the Tasting Notes tabs ("Nose: ... Taste: ... Finish: ...") or paragraph under the heading."""
+    sec = re.search(r'<section class="tasting-notes">(.*?)</section>', page, re.S)
+    parts = []
+    for intro in re.findall(r"<p>([^<]*\b(?:moves|moving)(?:\s|&nbsp;|\xa0)from[^<]*)</p>", page):
+        parts += re.findall(r"[^.]*\b(?:moves|moving) from [^.]*\.", _clean(intro))
+    tabs = re.findall(r'id="pills-(nose|taste|finish)"[^>]*>(.*?)</div>', sec.group(1), re.S) if sec else []
+    for tab, body in tabs:
+        items = [_clean(x) for x in re.findall(r"<p>(.*?)</p>", body, re.S)]
+        if any(items):
+            parts.append(f"{tab.capitalize()}: {', '.join(i for i in items if i)}.")
+    if not tabs:
+        para = re.search(r"<h2>Tasting Notes</h2>\s*<p>(.*?)</p>", page, re.S)
+        parts += [_clean(para.group(1))] if para else []
+    text = " ".join(p.strip() for p in parts).strip()
+    return text[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -45,5 +72,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         brand_family="2XO", expression=expression, name=name, source_url=url,
         proof=proof if stated else None, class_raw=class_raw,
         image_url=f"https://2xowhiskey.com/wp-content/uploads/2023/09/{photo}" if stated else None,
-        aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE, tasting_notes=_notes(page),
     )

@@ -7,10 +7,15 @@ the cached page — if the maker swaps the photo, the proof silently drops inste
 readings land within 0.06 of the seeded Breaking Bourbon proofs, which corroborates them. Cask-strength
 blends vary by batch, so each proof is "as pictured" (rounded to the column's one decimal).
 Skipped: /singlebarrel (a per-barrel program; the pictured barrel 'Serpens A0' says 120 proof, 60% ABV and
-is not the program's proof), /shop and the cocktail pages. Romulan and the other seeds are not on the site."""
+is not the program's proof), /shop and the cocktail pages. Romulan and the other seeds are not on the site.
+
+The page text is not empty: each bottling page ends in a "TASTING NOTES" block (Appearance / Nose / Palate / Finish, then a
+water note and a guest reviewer's paragraph). `tasting_notes` is the maker's Nose, Palate and Finish lines only, cut at a
+sentence end under 900 characters; the water note and the reviewer's prose are left out."""
 from __future__ import annotations
 
 import html
+import re
 
 from ...bourbon.model import BottlingRecord
 
@@ -44,6 +49,21 @@ def list_urls(fetcher) -> list[str]:
     return [f"https://www.stellum.com/{slug}" for slug in PAGES]
 
 
+def _tasting_notes(page: str) -> str | None:
+    body = re.sub(r"<(script|style|svg|noscript)[^>]*>.*?</\1>", "", page, flags=re.S)
+    flat = html.unescape(re.sub(r"<[^>]+>", "|", body)).replace("\u200b", "").replace("’", "'")
+    flat = re.sub(r"(\s*\|\s*)+", " | ", re.sub(r"\s+", " ", flat))
+    head = re.search(r"TASTING NOTES\s*\|", flat)
+    if not head:
+        return None
+    zone = re.split(r"\|\s*(?:WITH|TASTED WITH)\b[^|]*:", flat[head.end():], maxsplit=1)[0]  # before the water note
+    got = re.findall(r"\b(Nose|Palate|Finish)\s*:\s*\|\s*([^|]+)", zone)
+    text = " ".join(f"{label}: {value.strip().rstrip('.')}." for label, value in got)
+    if len(text) > 900:
+        text = text[:900].rsplit(". ", 1)[0] + "."
+    return text or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
@@ -53,7 +73,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     stated = media in page  # the label photo this proof was read from must still be on the page
     return BottlingRecord(
         brand_family="Stellum", expression=expression, name=name, source_url=url,
-        proof=round(proof, 1) if stated else None, class_raw=class_raw,
+        proof=round(proof, 1) if stated else None, class_raw=class_raw, tasting_notes=_tasting_notes(page),
         image_url=f"https://static.wixstatic.com/media/{media}~mv2." + ("png" if slug in ("equinox", "fibonacci", "huntersmoon") else "jpg") if stated else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

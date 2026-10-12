@@ -30,7 +30,9 @@ Judgment kept in the tables below:
    other pages is the page's own words ('Colorado Rye Whiskey', 'Colorado Bourbon Whiskey'); only the 2024 pair
    print 'Straight'.
  - The Aspen stave finish is on every page's header ('Finished with Aspen Wood Staves'); it is recorded as the
-   finish, except the M (maple-syrup barrels) and the aspen-charcoal-mellowed American Whiskey."""
+   finish, except the M (maple-syrup barrels) and the aspen-charcoal-mellowed American Whiskey.
+ - tasting_notes is the "NOTES OF SCENT & FLAVOR" list in the product block (before the carousel), as 'Scent & flavor: a, b, c.';
+   its award / small-batch / barrel-proof tags are labels, not flavors, and are dropped."""
 from __future__ import annotations
 
 import html
@@ -113,6 +115,32 @@ def _years(block: str) -> tuple[float | None, str | None]:
     return y, f"{int(y)} yr"
 
 
+_TAGS = re.compile(r"award winning|small batch|barrel proof|short aged", re.I)
+
+
+def _tasting(block: str) -> str | None:
+    """The list after 'NOTES OF| SCENT & FLAVOR|': short cells, one note each, ended by the first quote or sentence."""
+    m = re.search(r"NOTES OF\| SCENT & FLAVOR\|(.*)", block)
+    if not m:
+        return None
+    notes: list[str] = []
+    for cell in (c.strip() for c in m.group(1).split("|")):
+        if not cell or cell[0] in "“\"" or len(cell) > 80 or re.search(r"\.\s", cell + " ") or len(notes) >= 12:
+            if cell:
+                break
+            continue
+        if _TAGS.fullmatch(cell):
+            continue
+        cell = cell.lower() if cell.isupper() else cell
+        if cell.startswith("&") and notes:
+            notes[-1] += " " + cell
+        else:
+            notes.append(cell)
+    if not notes:
+        return None
+    return ("Scent & flavor: " + ("; " if any(re.search(r"[,:]", n) for n in notes) else ", ").join(notes) + ".")[:900]
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -157,5 +185,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         brand_family=FAMILY, expression=expression, name=name,
         source_url=f"https://distillery291.com/{slug}/", proof=proof, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=mash_raw, mash_style=mash_style, description=desc, finish=finish,
-        image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=_tasting(block), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

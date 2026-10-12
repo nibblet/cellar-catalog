@@ -6,7 +6,8 @@ empty). Two traps: the limited-releases slug `bourboon-rye-whiskeys` is actually
 bourbon (the h1 says so, the slug is a leftover), and `flight-series-iii` is one page carrying six
 bottlings, each with its own Proof block and a `BRS-Listing-Thumbnail-FIII-<Name>.png` thumbnail, so it
 yields six records. No page states an age or a mash bill (Trifecta's "six-year-old base" is one component
-of a blend, not an age statement)."""
+of a blend, not an age statement). tasting_notes is the bottling's own "Tasting Notes" block (01 Nose / 02 Palate /
+03 Finish; on the Flight Series III page each of the six has its own block after its Proof line)."""
 from __future__ import annotations
 
 import html
@@ -59,6 +60,15 @@ def _abs(src: str) -> str:
     return html.unescape(src) if src.startswith("http") else IMAGE_PREFIX.rstrip("/") + html.unescape(src)
 
 
+def _notes(block: str) -> str | None:
+    """Nose / Palate / Finish out of one "Tasting Notes" block of the `_text` form ("Nose| ... | Palate| ... | Finish| ...")."""
+    parts = re.findall(r"\b(Nose|Palate|Finish)\|\s*([^|]+)", block)
+    t = " ".join(f"{k}: {v.strip()}" for k, v in parts if v.strip())
+    t = t.replace("\u200d", "").replace("\u200b", "")
+    t = re.sub(r"\s+", " ", t).strip()
+    return (t[:900].rsplit(" ", 1)[0] if len(t) > 900 else t) or None
+
+
 def parse(url: str, page: str):
     slug = url.rstrip("/").split("/")[-1]
     text = _text(page)
@@ -68,10 +78,11 @@ def parse(url: str, page: str):
             m = re.search(re.escape(name) + r"\s*\|\s*Proof:\|\s*(\d{2,3}(?:\.\d+)?)", text)
             key = name.replace("&", "and").replace(" ", "")
             img = re.search(r'src="([^"]*Thumbnail-FIII-%s[^"]*)"' % re.escape(key), page)
+            nm = re.search(re.escape(name) + r"\s*\|\s*Proof:.*?Tasting Notes(.*?)(?:Find a Retailer|Catch a butterfly|$)", text, re.S | re.I)
             out.append(BottlingRecord(
                 brand_family="Blue Run", expression=f"Flight Series III: {name}", name=f"Blue Run Flight Series III: {name}",
                 source_url=url, proof=float(m.group(1)) if m else None, class_raw=class_raw,
-                image_url=_abs(img.group(1)) if img else None,
+                tasting_notes=_notes(nm.group(1)) if nm else None, image_url=_abs(img.group(1)) if img else None,
                 aliases=[], is_core_range=False,
             ))
         return out
@@ -83,10 +94,11 @@ def parse(url: str, page: str):
     own = text[start:text.find("Tasting Notes", start)] if start >= 0 else text
     m = re.search(r"Proof:\|\s*(\d{2,3}(?:\.\d+)?)", own)
     img = re.search(r'<img[^>]*src="([^"]+)"[^>]*typeof="foaf:Image"', page)
+    nm = re.search(r"Tasting Notes(.*?)(?:Catch a butterfly|Find Blue Run Spirits|$)", text[start:] if start >= 0 else text, re.S)
     desc = re.sub(r"\s*\|\s*", " ", own.split("Small-Batch Whiskey", 1)[-1].split("Proof:")[0]).strip() or None
     return BottlingRecord(
         brand_family="Blue Run", expression=expression, name=name, source_url=url,
         proof=float(m.group(1)) if m else None, class_raw=class_raw,
-        description=desc[:600] if desc else None, image_url=_abs(img.group(1)) if img else None,
+        description=desc[:600] if desc else None, tasting_notes=_notes(nm.group(1)) if nm else None, image_url=_abs(img.group(1)) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

@@ -26,7 +26,10 @@ Not imported (and why):
   images: they are title graphics, not bottle labels).
 - Bourbon Cream and Chocolate Bourbon Cream (liqueurs), Extra Dry Gin, merchandise, events.
 
-Lexington Club (a revived 1878 brand the distillery re-introduced) is its own catalog family under this maker."""
+Lexington Club (a revived 1878 brand the distillery re-introduced) is its own catalog family under this maker.
+
+`tasting_notes` is the Nose / Taste / Finish lines of that same "TASTING NOTES" block (the Appearance line and the sibling
+bottle names listed after it are left out)."""
 from __future__ import annotations
 
 import html
@@ -106,6 +109,13 @@ def _age(copy: str) -> tuple[float | None, str | None]:
     return None, None
 
 
+def _tasting_notes(notes: str) -> str | None:
+    """`notes` is the page text after "TASTING NOTES": `Nose| ...| Taste| ...| Finish| ...|` then the sibling bottles' names.
+    Each label takes only the one segment after it."""
+    got = re.findall(r"\|\s*(Nose|Taste|Finish)\s*\|\s*([^|]+)", notes)
+    return " ".join(f"{label}: {_text(text).rstrip('.')}." for label, text in got)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -131,6 +141,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, finish=FINISH.get(slug),
-        description=_text(copy[:600]), image_url=html.unescape(img) if img else None,
+        description=_text(copy[:600]), tasting_notes=_tasting_notes(notes), image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

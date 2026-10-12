@@ -4,7 +4,9 @@ proof"); Straight Bourbon and the Rye page (the live one is at /copy-of-smoke-wa
 /rye URL the old sitemap still lists is Wix's own retired "Old first version" of that page) describe
 mash bills and blending philosophy with no proof at all; Uncut Unfiltered gives a floor, not a number
 ("115-116 plus proof"). Silver Dollar is a vodka, not whiskey, and is not crawled. A bottle photo, where
-one exists, is the first `<img alt="Smoke Wagon ...">` on the page; most pages have none."""
+one exists, is the first `<img alt="Smoke Wagon ...">` on the page; most pages have none. `tasting_notes` is the page's own
+"Nose :" / "Taste :" lines (Small Batch, Straight Bourbon) or, for Uncut Unfiltered, its flavor sentences; the Rye page
+describes three different ryes (traditional, malted, the blend) under one URL, so it gets no notes."""
 from __future__ import annotations
 
 import html
@@ -45,6 +47,27 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+AWARD = re.compile(r"^\d{4}\b|\b(?:Competition|Medal|Winner|About)\b")
+
+
+def _notes(own: str, path: str) -> str | None:
+    """Nose/Taste lines, with the segments the Taste line runs on into until the awards; the Uncut page has no such lines."""
+    segs = [t.strip() for t in re.sub("\u200b", "", own).split("|")]
+    out, taking = [], False
+    for seg in segs:
+        if re.match(r"(?:Nose|Taste)\s*:", seg):
+            taking = True
+        elif taking and AWARD.search(seg):
+            break
+        if taking and seg:
+            out.append(seg)
+    if not out and path == "uncut-unfiltered":
+        para = next((g for g in segs if re.search(r"mouth ?feel", g)), "")
+        out = [x.strip() for x in re.findall(r"[^.!]*[.!]", para) if re.search(r"\b(?:rich|sweet|mouth ?feel|spice|creamy|caramel|honey|fruit)\b", x)][:2]
+    text = re.sub(r"\s+", " ", re.sub(r"\b(Nose|Taste)\s*:\s*", r"\1: ", " ".join(out))).strip()
+    return text[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     path = urlparse(url).path.strip("/")
     if path not in REFILE:
@@ -66,6 +89,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Smoke Wagon", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=mash_raw or None, mash_style="high_rye" if "high rye" in own.lower() else None,
-        description=_text(own[:600]), image_url=html.unescape(img) if img else None,
+        description=_text(own[:600]), tasting_notes=_notes(own, path), image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

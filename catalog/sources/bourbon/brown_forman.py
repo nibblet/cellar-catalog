@@ -3,7 +3,13 @@ page each; proof in the copy or the title), woodfordreserve.com (WordPress; a "P
 note; the og:image is a seasonal bottle, so the product image is read from the summary block) and
 jackdaniels.com (Next.js; schema.org Product with name, description and bottle image; proof in the
 copy). Jack Daniel's current lineup is what its listing pages link to; the /whiskey/limited/ decanters
-and replicas are history, not products. Flavored whiskeys and RTDs are skipped."""
+and replicas are history, not products. Flavored whiskeys and RTDs are skipped.
+
+`tasting_notes` is each page's own tasting block, read the way its site lays it out: Old Forester's three icon cards
+(aroma / taste / finish), Woodford's Nose / Taste / Finish after its Proof and Appearance lines, Coopers' Craft's "Flavor
+Profile" (the nose, the taste, the finish), and Jack Daniel's aroma / taste / finish strip. Jack Daniel's pages without that
+strip (the Distillery Series, the aged and single-barrel releases) keep only the intro sentences that name notes, nose or palate.
+The "you might also like" cards, cocktail recipes and sibling lists on every page are never read."""
 from __future__ import annotations
 
 import html
@@ -149,6 +155,60 @@ def _flat(page: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+def _sentence(text: str) -> str:
+    text = text.strip()
+    return text if text.endswith((".", "!", "?")) else text + "."
+
+
+def _pairs(pairs: list[tuple[str, str]]) -> str | None:
+    out = [f"{'Aroma' if k.strip().lower() == 'arome' else k.strip().capitalize()}: {_sentence(v)}" for k, v in pairs if k and v and v.strip()]
+    return " ".join(out)[:900] or None
+
+
+JD_LABELS = ("aroma", "arome", "nose", "taste", "flavor", "finish")
+JD_SENSORY = re.compile(r"\bnotes? of\b|\bnose\b|\bpalate\b|\baromas?\b|\bflavors? of\b|\btaste (?:rich|begins)\b", re.I)
+JD_NOT_TASTE = re.compile(r"recipe|cocktail|proof will|available (?:only|in)|selected by|trademark|\bcookies?\b", re.I)
+
+
+def _notes(host: str, page: str, flat: str) -> str | None:
+    if host == "www.oldforester.com":
+        icons = {"nose": "Aroma", "lips": "Taste", "glass": "Finish"}
+        pairs = []
+        for cls, head, body in re.findall(r'<h2 class="[^"]*tasting-note-title([^"]*)">(.*?)</h2>\s*<p>(.*?)</p>', page, re.S):
+            icon = re.search(r"uses-icon-(\w+)", cls)
+            label = _text(re.sub(r"<svg.*?</svg>", "", head, flags=re.S)) or icons.get(icon.group(1) if icon else "", "")
+            pairs.append((label, _text(body) or ""))
+        return _pairs(pairs)
+    if host == "www.cooperscraft.com":
+        m = re.search(r"FLAVOR PROFILE\|\s*THE NOSE:\|\s*(.*?)\|\s*THE TASTE:\|\s*(.*?)\|\s*THE FINISH:\|\s*(.*?)\|", flat)
+        return _pairs(list(zip(("Nose", "Taste", "Finish"), m.groups()))) if m else None
+    toks = [t.strip() for t in flat.split("|")]
+    if host == "www.woodfordreserve.com":
+        got: dict[str, str] = {}
+        for i, t in enumerate(toks):
+            m = re.match(r"(Aroma|Flavor|Nose|Taste|Finish):\s*(.+)$", t)
+            if m:
+                got.setdefault(m.group(1), m.group(2))
+            elif t in ("Nose", "Taste", "Finish") and i + 1 < len(toks):
+                got.setdefault(t, toks[i + 1])
+        return _pairs(list(got.items()))
+    # jackdaniels.com: an aroma / taste / finish strip, else the intro sentences that name notes, nose or palate
+    low = [t.lower() for t in toks]
+    for i, t in enumerate(low):
+        if t in ("aroma", "arome", "nose") and i + 6 < len(toks) and low[i + 2] in ("taste", "flavor") and low[i + 4] == "finish":
+            return _pairs([(toks[i], toks[i + 1]), (toks[i + 2], toks[i + 3]), (toks[i + 4], toks[i + 5])])
+    intro = re.split(r"(?i)\|\s*you might also like|\|\s*targeting cookies|\|\s*explore ", flat)[0]
+    sents = []
+    for seg in intro.split("|"):
+        for sent in re.split(r"(?<=[.!?])\s+", seg.strip()):
+            sent = re.sub(r"^Offered at [^)]*\),\s*", "", sent.strip())  # the proof clause is not taste
+            sent = _sentence(sent) if sent else ""
+            core = re.sub(r"^notes? of ", "", sent.lower().rstrip("."))
+            if sent and JD_SENSORY.search(sent) and not JD_NOT_TASTE.search(sent) and core not in " ".join(sents).lower():
+                sents.append(sent)  # a bullet that repeats a sentence already kept is dropped
+    return " ".join(sents)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     host, path = urlparse(url).netloc, urlparse(url).path
     slug = path.rstrip("/").split("/")[-1]
@@ -243,6 +303,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     mash = "rye" if class_raw.startswith("Straight Rye") else None  # none of these pages states a recipe
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style=mash, description=description, image_url=img,
+        class_raw=class_raw, mash_raw=None, mash_style=mash, description=description, tasting_notes=_notes(host, page, flat), image_url=img,
         aliases=sorted({*aliases} - {name}), is_core_range=not NOT_CORE.search(name),
     )

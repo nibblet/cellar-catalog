@@ -8,7 +8,9 @@ Bourbon page states no proof at all; its blurb calls it "Our Original 86 Bourbon
 maker's own product name (PROOF_FROM_NAME) rather than left blank. Single Barrel Collection lists two
 different barrels with their own ages and proofs, so no single proof is taken. Every mash bill is a
 structured "Mashbill | 74% Corn | 14% Malted Rye | 12% Malted Barley" block. Clown's Iowa Shine is
-unaged raw spirit and is skipped."""
+unaged raw spirit and is skipped. The pages have no tasting block, so `tasting_notes` is only the product-copy
+sentences that name a "note" (three pages: "bold notes of tobacco", "a sweet honey note"); vague praise ("flavorful",
+"tangy"), cask and malting explanations and shipping text are not notes, so most pages leave it None."""
 from __future__ import annotations
 
 import html
@@ -95,6 +97,17 @@ def _own(text: str) -> str:
     return text[k:min(ends)] if ends else text[k:k + 1500]
 
 
+TASTE_CUE = re.compile(r"\bnotes?\b", re.I)
+
+
+def _notes(own: str) -> str | None:
+    """Sentences of the product copy (the part before the Mashbill block) that name a taste."""
+    out = []
+    for para in own.split("Mashbill|")[0].split("|"):
+        out += [s for s in re.split(r"(?<=[.!?])\s+(?=[A-Z])", para.strip()) if TASTE_CUE.search(s)]
+    return " ".join(out)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -143,7 +156,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Cedar Ridge", expression=expression, name=name,
         source_url=url, proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, description=desc[:600] if desc else None,
+        class_raw=class_raw, mash_raw=mash_raw, description=desc[:600] if desc else None, tasting_notes=_notes(own),
         image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

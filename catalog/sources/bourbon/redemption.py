@@ -12,7 +12,9 @@ Only the bonded single barrel states an age in its body ("aged for at least six 
 bonded warehouse"); the flagship Bourbon, Rye, High Rye and Wheated pages state none, so the seed's ages for
 those rows are left alone (never NAS from silence). Cognac Cask Finish states "limited-edition".
 The "Higher Marques" shelf (Bonded Single Barrel, Cognac Cask Finish, Wheated Bourbon) and "Classics" are the
-standing lineup; "Limited Releases" and "The Ancients" are releases and are not core range."""
+standing lineup; "Limited Releases" and "The Ancients" are releases and are not core range. tasting_notes is the page's own
+flavor tile ("Notes | Caramel, Baking Spices, Anise") plus its "Tasting Notes" block (Sniff / Sip / Savor = aroma, taste,
+aftertaste); the hero blurb, the Master Blender quote and the 92-proof boilerplate under it are not read."""
 from __future__ import annotations
 
 import html
@@ -83,8 +85,20 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     # "Aged for at least six years" is the bonded page's own sentence; the titles print "9 Year old" etc.
     years, label = age(f"{title} {hero}")
 
-    nm = re.search(r"\|\s*Notes\s*\|\s*([^|]+)\|", own)
-    notes = nm.group(1).strip() if nm else None
+    # The "Details" tile lists three flavors; the Tasting Notes block has Sniff / Sip / Savor lines. `own` is a run of
+    # text cells split by "|"; each label is followed by its text as the next non-empty cell.
+    cells = [c.strip() for c in own.split("|") if c.strip()]
+
+    def after(label: str, start: int = 0) -> tuple[str | None, int]:
+        i = next((k for k in range(start, len(cells) - 1) if cells[k] == label), None)
+        return (cells[i + 1], i) if i is not None else (None, start)
+
+    pieces = [("Notes", after("Notes")[0])]  # "Tasting Notes" is a different cell, so it cannot match here
+    _, at = after("Tasting Notes")
+    if at:
+        pieces += [(label, after(key, at)[0]) for label, key in (("Aroma", "Sniff"), ("Taste", "Sip"), ("Aftertaste", "Savor"))]
+    notes = " ".join(f"{k}: {v}" for k, v in pieces if v) or None
+    notes = notes[:900].rsplit(" ", 1)[0] if notes and len(notes) > 900 else notes
     img = re.search(r'property="og:image" content="([^"]+)"', page)
     st = spirit_type(class_raw, name)
     style = mash_style(grain, st, name) if grain else (mash_style(None, st, name) if st == "rye" else None)

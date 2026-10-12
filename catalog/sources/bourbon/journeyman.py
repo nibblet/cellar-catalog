@@ -39,11 +39,16 @@ Judgments carried here so a re-run reproduces them:
 - Election Day Rye "aged for four summers" and Kissing Cousins' "6 months" in wine barrels are copy, not an age field:
   no age, the finish is carried (Kissing Cousins only).
 - Featherbone's seeded 2-year age is not stated anywhere on the maker's page; the writer never clears a seeded age, so
-  it is listed in the hand-off for the owner's NAS decision."""
+  it is listed in the hand-off for the owner's NAS decision.
+
+Journeyman prints no Nose/Palate/Finish block: where a page describes how the whiskey smells or tastes it is a sentence or two
+inside the brand-story copy. `tasting_notes` is only those sentences ("notes of ...", "on the palate", "the finish is ..."), taken
+from the copy between the accolades and the "Back To Spirits" link, never the spec bullets or the Freedom Series intro."""
 from __future__ import annotations
 
 import html
 import re
+import unicodedata
 
 from ...bourbon.model import BottlingRecord
 from ...bourbon.normalize import age
@@ -131,13 +136,30 @@ def _mash(items: list[str]) -> str | None:
     return None
 
 
+TASTE_CUE = re.compile(r"\bnotes? of\b|\bflavou?rs? of\b|\bhints? of\b|\bwhisper of\b|\bpalate\b|\bnose\b|\bfinish\b(?!\s+line)|\bcitrus notes\b", re.I)
+NOT_TASTE = re.compile(r"%|\bproof\b|\baged\b|\bFreedom Series\b|\bjournal\b|\bpoints?\b", re.I)
+
+
+def _tasting_notes(own: str) -> str | None:
+    """The sentences of the copy (after "BRAND STORY", else after "SHOP NOW", up to "Back To Spirits") that describe taste."""
+    start = own.find("BRAND STORY|")
+    start = start + len("BRAND STORY|") if start >= 0 else own.find("SHOP NOW|") + len("SHOP NOW|")
+    end = own.find("Back To Spirits|")
+    if start < len("SHOP NOW|") or end < start:
+        return None
+    copy = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", own[start:end].replace("|", " "))).strip()  # NFKC: the page's "toﬀee" ligature
+    sentences = [x for x in re.split(r"(?<=[.!?])\s+", copy) if TASTE_CUE.search(x) and not NOT_TASTE.search(x)]
+    return " ".join(sentences)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in PAGES:
         return None
     expression, aliases, class_raw, finish = PAGES[slug]
     name = f"Journeyman {expression}"
-    items = _items(_flat(page))
+    own = _flat(page)
+    items = _items(own)
     spec = " | ".join(items)
 
     pm = re.search(r"(\d{2,3}(?:\.\d+)?)\s*proof\b", spec, re.I)
@@ -151,6 +173,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Journeyman", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw,
-        finish=finish, image_url=html.unescape(og.group(1)) if og else None,
+        finish=finish, tasting_notes=_tasting_notes(own), image_url=html.unescape(og.group(1)) if og else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

@@ -11,7 +11,9 @@ Exploration Series, Decade Series, Master Blender's Edition, Trilogy Collection 
 core three, not its own product) state no proof in static text on their landing pages at all (each
 numbered volume apparently only lives in the Wix Store's own JS-rendered product cards, not in page copy)
 and are not crawled; the seed's many rows for them have no current-page correspondence to check against
-and are left for a human to reconcile rather than guessed at."""
+and are left for a human to reconcile rather than guessed at. `tasting_notes` is the page's own NOSE: / PALATE: lines
+under the AGE line (not the blurb above it, the press quote or the "Our Whiskeys" list); Ascension and Revival print
+the same two lines."""
 from __future__ import annotations
 
 import html
@@ -48,6 +50,16 @@ def _text(fragment: str | None) -> str | None:
     t = html.unescape(re.sub(r"<[^>]+>", " ", fragment)).replace("\xa0", " ").replace("’", "'")
     t = re.sub(r"\s+", " ", t).strip()
     return t or None
+
+
+def _notes(own: str) -> str | None:
+    """'AGE:| At least 5 years| NOSE:| text| PALATE:| text| - OUR WHISKEYS -' → 'Nose: text. Palate: text.' (a FINISH: line too, if one appears)."""
+    i = own.find("AGE:")
+    if i < 0:
+        return None
+    toks = [t.strip() for t in own[i:].split("– OUR WHISKEYS –")[0].split("|") if t.strip()]
+    got = {toks[k][:-1].title(): toks[k + 1].rstrip(". ") for k in range(len(toks) - 1) if toks[k] in ("NOSE:", "PALATE:", "FINISH:")}
+    return " ".join(f"{label}: {got[label]}." for label in ("Nose", "Palate", "Finish") if label in got)[:900] or None
 
 
 def parse(url: str, page: str) -> BottlingRecord | None:
@@ -87,6 +99,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Heaven's Door", expression=expression, name=name,
         source_url=f"https://www.heavensdoor.com/{slug}", proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc,
+        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc, tasting_notes=_notes(own),
         image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=True,
     )

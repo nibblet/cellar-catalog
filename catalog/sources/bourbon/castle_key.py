@@ -11,7 +11,11 @@ Experimental Series releases don't ("Hungarian Tokaji Casks" names neither): tho
 description with "Our Rye is..." or "Our Wheated Bourbon is...", read as the self-description rather than
 guessed from the name. A URL slug can be a stale leftover of an earlier vintage's own age (the wheated
 line's handle, `small-batch-7-year-wheated-bourbon`, is now a 5-year whiskey per its own body copy) —
-the body text is read, never the slug."""
+the body text is read, never the slug.
+
+`tasting_notes` is the accordion's "Flavor Profile & Tasting Notes" panel: two unlabelled flavor lists (nose, palate) and a
+Finish line, read up to the "Featured Recipe" block (the cocktail and the "Discover Our Spirits" carousel of sibling bottles
+come after it, and the marketing copy above is not read)."""
 from __future__ import annotations
 
 import html
@@ -66,6 +70,29 @@ def _expand_mash(raw: str) -> str:
     return ", ".join(f"{pct}% {MASH_EXPAND.get(code.upper(), code)}" for pct, code in parts) or raw
 
 
+def _tasting(own: str) -> str | None:
+    segs = [x.strip() for x in own.split("|") if x.strip()]
+    start = next((i for i, x in enumerate(segs) if x == "Flavor Profile & Tasting Notes"), None)
+    if start is None:
+        return None
+    body = []
+    for x in segs[start + 1:]:
+        if x in ("Featured Recipe", "Discover Our Spirits", "View Full Recipe"):
+            break
+        body.append(x)
+    if "Finish" in body:
+        k = body.index("Finish")
+        head, tail = body[:k], body[k + 1:]
+    else:
+        head, tail = body, []
+    text = ""
+    for x in (y.strip(". ") for y in head):  # the theme breaks a line mid-list ("Red Apple, | Honeysuckle"): rejoin after a comma, else start a new list
+        text = x if not text else f"{text} {x}" if text.endswith(",") else f"{text}. {x}"
+    if tail:
+        text += (". " if text else "") + "Finish: " + " ".join(tail).strip(". ")
+    return (text + ".")[:900] if text else None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = url.rstrip("/").split("/")[-1]
     if handle not in REFILE:
@@ -103,6 +130,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Castle & Key", expression=expression, name=name,
         source_url=f"https://castleandkey.com/products/{handle}", proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc,
+        class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if rye else None, description=desc, tasting_notes=_tasting(own),
         image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

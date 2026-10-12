@@ -573,6 +573,32 @@ tastings add to it. Our importers never captured tasting notes, so every row the
   client, which has no schema and so reads and writes the stale `public.products`, not `cellar.products`; it is now scoped to `cellar`. (3) It paged by a
   non-unique `name` and skipped rows (saw 38 of 152 candidates); it now pages by `id` with the empty-wheel filter on the server, and takes `--shard i/n`.
 - **Not fixed:** `src/lib/openai/map-wheel.ts` (member tastings to wheel) has the same required-integer schema; 4 of the 5 member tastings with a wheel are dense.
+Round two (same day): every importer now captures its own page's notes into `tasting_notes` (58 modules, six agents; each proved with a before/after
+`dataclasses.asdict` dump that no other field changed). Records naming at least three real flavors went from 217 to 836, and 310 more maker-notes reviews
+were inserted (`sql/20261013_maker_tasting_notes_2.sql`) before `seed:enrich` rebuilt the wheels. Lessons:
+
+- Read the labelled taste block, nothing page-wide: Nose / Palate / Finish, Sensory Notes, Flavor Profile, Tasting Notes, Scent & Flavor. It is a label followed by
+  one value in many markups (`Label| text|`, inline `Label: text`, all-caps `NOSE | text`, numbered tiles, a typed Shopify body); parse label/value pairs and stop at the
+  first segment that is not one, which keeps carousels, cocktail recipes, review forms and press quotes out. Free prose is a weak fallback: keep only sentences that
+  name two or more flavors and drop cocktail, pairing and production sentences. Drop placeholders ("?", "coming...", "Deep brown") and glued-on marketing.
+- A new field that silently stays empty looks done in the code: Redemption's and Barton's notes regexes never matched. Print per-module non-empty counts and read
+  samples after wiring any field.
+- The same bottle's copy can sit on two pages (a brand page and a shop page) and the dedupe keeps the later record: set the field in every parse path (A. Smith Bowman).
+- Compare notes across a module's records: identical text on two bottles is the maker's copy-paste (Wyoming's one block on five bottles, Garrison Young Gun, Four Gate
+  Kelvin Sixty / Batch 29, Wilderness Trail Rye / High Rye, Distillery 291 XIII / XIV, New Riff's two wheats, Heaven's Door Ascension / Revival, Chicken Cock). Some modules
+  guard it (`COPIED_NOTES`, `REPEATED_NOSE`); `bourbon_notes.py` skips any text shared by two records in a module.
+- Multi-release and multi-batch pages: the current block is first (Barrell, Doc Swinson's, HK Young, Michter's Legacy, Still Austin Bottled in Bond), an empty
+  "Tasting Notes" heading is empty, and one URL covering several bottles (Shortbarrel's Bees Knees and Afterswarm, Smoke Wagon Rye, Barrell's cask-finish landing page) gets
+  none. Single-barrel pages that describe a sibling ("shares a familiar foundation with our...") get none.
+- Third-party text is not the maker's: Rabbit Hole's four core pages quote Whiskey Advocate in the notes block (left empty), Backbone and Lucky Seven pages quote press,
+  Town Branch has "2021 BTI" quotes, Heaven Hill's Toasted Barrel page quotes a reviewer.
+- Page-structure traps: thebar.com carries a second brand-level tasting block that names a sibling (take the first, stop at "Serving suggestion"); a bare "Finish:" in a
+  technical-details block is a cask finish (anchor on "Nose"); bulleit.com's notes can sit after the "Try This Drink" cut; WordPress drop-cap spans split words ("C orn")
+  and lost ligatures ("avors", "nish") need repairing; a CMS field name can leak into the text (Wild Turkey "Meta Desc:"). "Little text" is not "no notes": Stellum's
+  700 KB label-photo pages each hold a full tasting block.
+- `scripts/bourbon_notes.py` prefers `tasting_notes` over `description` for a record, so a narrow correct note can score lower than a long description that named flavors
+  in production text (Cedar Ridge). Judge a module by reading its notes.
+
 - **Do not** use `seed:enrich-web` for bourbon: it also fills specs and images from web search, which breaks the maker-only rule.
 
 ## Phase 2 — TTB COLA as the second source (Q1 2027)

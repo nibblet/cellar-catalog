@@ -19,7 +19,11 @@ batch). The Jokester has only a video-embed page and is on neither the collectio
 is left alone, not flagged (a page that exists is not gone).
 
 Pages are merged through module state: the collection page's records are held and the store page's parse returns the
-combined list (the diff's `_dedupe` keeps the last record per bottling)."""
+combined list (the diff's `_dedupe` keeps the last record per bottling).
+
+`tasting_notes` is the "Tasting Notes:" line under each bottle's own tile on the store page (the Gold Label's is the
+blender's). The collection page's quoted reviews (Binny's, Bounty Hunter, Whisky Advocate) are retailers' and critics'
+words, the single-barrel tiles describe one barrel, and a tile whose note names no actual flavor (The Holiday Toast's, The Frenchman's) keeps none."""
 from __future__ import annotations
 
 import html
@@ -127,6 +131,20 @@ def _store_images(page: str) -> dict[str, str]:
     return out
 
 
+_TILE_END = r"(?=\|\s*(?:Small Batch Expressions|Single Barrel Expressions|The Workhorse|The Hold Up 9yrs|Lucky Seven Small Batch|The New Yorker|The Holiday Toast|The Frenchman)\b|$)"
+_FLAVOR = re.compile(r"\b(?:fruit|spice|allspice|caramel|vanilla|pears?|pecans?|cinnamon|sugar|tobacco|cherry|cherries|jam|mint|honey|chocolate|citrus)\b", re.I)
+
+
+def _tile_notes(region: str, key: str) -> str | None:
+    """The "Tasting Notes:" line of the store tile whose title is `key`, up to the next tile or section heading."""
+    m = re.search(re.escape(key) + r"\|.*?Tasting Notes:\|\s*(.*?)" + _TILE_END, region, re.S)
+    if not m:
+        return None
+    t = re.sub(r"\s+", " ", m.group(1).replace("|", " ")).strip()
+    t = re.sub(r'^\(from the Blender\):\s*', "", t).strip('" ')
+    return t[:900] if _FLAVOR.search(t) else None
+
+
 def _store(page: str) -> list[BottlingRecord]:
     own = _flat(page)
     imgs = _store_images(page)
@@ -137,6 +155,7 @@ def _store(page: str) -> list[BottlingRecord]:
         expr, aliases, finish, _ = REFILE["Lucky Seven Small Batch"]
         out.append(_rec(expr, aliases, float(gm.group(2)), None, None, BASE + " Small Batch", None, finish, STORE,
                         imgs.get("Lucky Seven Small Batch"), None))
+        out[-1].tasting_notes = _tile_notes(own, "Lucky Seven Small Batch")
     for title, key in (("The Workhorse", "The Workhorse"), ("The Hold Up", "The Hold Up 9yrs"), ("The New Yorker", "The New Yorker"),
                        ("The Holiday Toast", "The Holiday Toast"), ("The Frenchman", "The Frenchman")):
         expr, aliases, finish, _ = REFILE[title]
@@ -147,6 +166,7 @@ def _store(page: str) -> list[BottlingRecord]:
         ym = re.search(r"(\d{1,2})yrs", key)
         out.append(_rec(expr, aliases, proof, float(ym.group(1)) if ym else None, f"{ym.group(1)} yr" if ym else None, BASE, None, finish, STORE,
                         imgs.get(key), None))
+        out[-1].tasting_notes = _tile_notes(tiles, key)
     return out
 
 
@@ -168,5 +188,5 @@ def parse(url: str, page: str) -> list[BottlingRecord] | None:
             brand_family=s.brand_family, expression=s.expression, name=s.name, source_url=c.source_url,
             proof=c.proof if c.proof is not None else s.proof, age_years=c.age_years if c.age_years is not None else s.age_years,
             age_label=c.age_label or s.age_label, class_raw=c.class_raw, mash_raw=c.mash_raw, finish=c.finish or s.finish,
-            description=c.description, image_url=s.image_url, aliases=sorted(set(c.aliases) | set(s.aliases)), is_core_range=s.is_core_range))
+            description=c.description, tasting_notes=s.tasting_notes, image_url=s.image_url, aliases=sorted(set(c.aliases) | set(s.aliases)), is_core_range=s.is_core_range))
     return merged + list(held.values())  # the Proprietors: on the collection page only

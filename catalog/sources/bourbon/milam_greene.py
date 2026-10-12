@@ -32,7 +32,9 @@ What is a row (decided here, so a re-run reproduces it):
 Mash: Triple Cask, Wildlife (and the Bluebonnet / Answer copy) print "70% corn, 22% malted rye, 8% barley"; rye at 20 percent or
 more is high_rye (the shared mash_style() does not read "22% malted rye", so this module sets the style). Very Small Batch
 blends a Kentucky and a Tennessee mash bill (two recipes), so none is stored.
-Class: the Provisions page names no class beyond 'Bourbon', so class_raw is 'Bourbon Whiskey' (the shop's own product type)."""
+Class: the Provisions page names no class beyond 'Bourbon', so class_raw is 'Bourbon Whiskey' (the shop's own product type).
+`tasting_notes` is the copy's own Nose (or Aroma) / Palate / Finish lines, which print as "Nose: text", "Nose: | text" or
+"NOSE | text" depending on the page; the Color line, the blurb's prose and the award lines are not notes."""
 from __future__ import annotations
 
 import html
@@ -122,6 +124,23 @@ def _mash(text: str) -> tuple[str | None, str | None]:
     return raw, ("high_rye" if rye and int(rye.group(1)) >= 20 else "traditional")
 
 
+def _notes(text: str) -> str | None:
+    """Each Nose / Aroma / Palate / Finish label owns one `|` cell: either inline ("Nose: Mixed...") or the next cell."""
+    toks = [t.strip() for t in text.split("|") if t.strip()]
+    got: dict[str, str] = {}
+    for k, tok in enumerate(toks):
+        m = re.fullmatch(r"(Nose|NOSE|Aroma|Palate|PALATE|Finish|FINISH)\b\s*:?\s*(.*)", tok)
+        if not m:
+            continue
+        label = {"nose": "Nose", "aroma": "Nose", "palate": "Palate", "finish": "Finish"}[m.group(1).lower()]
+        value = m.group(2) or (toks[k + 1] if k + 1 < len(toks) else "")
+        if value and label not in got:
+            got[label] = value.strip().rstrip(".")
+    if "Palate" not in got:  # a lone stray word is not a tasting block
+        return None
+    return " ".join(f"{label}: {got[label]}." for label in ("Nose", "Palate", "Finish") if label in got)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = url.replace(BASE, "").removesuffix(".json")
     if handle not in PAGES:
@@ -136,5 +155,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=BASE + handle, proof=_proof(text),
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, mash_style=style, finish=finish,
-        image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        tasting_notes=_notes(text), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

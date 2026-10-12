@@ -3,7 +3,9 @@ tasting notes and the legal line "BULLEIT BOURBON Kentucky Straight Bourbon Whis
 Dickel, Blade and Bow and I.W. Harper have no product pages of their own: georgedickel.com redirects each
 whisky to Diageo's store, thebar.com (or to a brand/recipes page when the store no longer sells it), whose product pages carry the copy ("This 100 proof whisky has been
 matured for 13 years"), a bullet ("One 91 proof 750 ml bottle"), the legal line and a front bottle shot.
-thebar.com is Diageo's own store, so it counts as the maker's page for Diageo's brands."""
+thebar.com is Diageo's own store, so it counts as the maker's page for Diageo's brands. `tasting_notes` is the page's own
+"Tasting notes" block: Bulleit's section up to the legal line / next heading, the store's block up to "Serving suggestion" (the
+store prints a second, brand-level Nose/Taste/Finish block lower down that can name a sibling, so only the first is read)."""
 from __future__ import annotations
 
 import html
@@ -67,6 +69,28 @@ def _text(fragment: str | None) -> str | None:
     t = html.unescape(re.sub(r"<[^>]+>", " ", fragment)).replace("\xa0", " ").replace("’", "'")
     t = re.sub(r"\s+", " ", t).strip()
     return t or None
+
+
+NOTES_STOP = re.compile(r"Serving suggestion|Alc/Vol|ABV|Country of [Oo]rigin|Share\b|Engravable|^[A-Z0-9 +&'.:/-]{5,}$")
+
+
+def _tasting_notes(own: str) -> str | None:
+    """`own` is the product's pipe-separated copy. The first "Tasting notes" heading and the paragraphs after it, stopping at the
+    serving suggestion, the legal line, a heading in capitals or the share row. Bulleit's 10 Year Rye has no heading: its
+    "On the nose ..." paragraph is the note."""
+    m = re.search(r"tasting notes\s*\|", own, re.I)
+    if m:
+        paras = []
+        for seg in own[m.end():].split("|"):
+            seg = seg.strip()
+            if not seg:
+                continue
+            if NOTES_STOP.search(seg):
+                break
+            paras.append(seg)
+        return _text(" ".join(paras))[:900] if paras else None
+    m = re.search(r"On the nose\b[^|]*", own)
+    return _text(m.group(0))[:900] if m else None
 
 
 def parse(url: str, page: str) -> BottlingRecord | None:
@@ -135,5 +159,5 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=mash_raw, mash_style="rye" if "Rye" in class_raw else None, description=_text(own[:600]),
-        image_url=img, aliases=sorted({*aliases, *([h1] if h1 else [])} - {name}), is_core_range=not NOT_CORE.search(name),
+        tasting_notes=_tasting_notes(re.split(r"Why buy from The Bar|Share on Social Media", flat[start:])[0]), image_url=img, aliases=sorted({*aliases, *([h1] if h1 else [])} - {name}), is_core_range=not NOT_CORE.search(name),
     )

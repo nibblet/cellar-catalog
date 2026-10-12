@@ -29,6 +29,9 @@ Not imported, and why (a program, not a bottling, or no proof to state):
   Reserve Blend Sweet Mash Rye' (115, 4 yr) is not claimed — it may be an earlier year's blend.
 - Single-barrel Schoonover: barrel proof, no number.
 
+`tasting_notes` is the page's own Aroma / Taste / Finish lines (not the maker quote after them, the intro or the
+recipes); Dark Roast Rye's page has none, so it stays None.
+
 Naming: bar-order expressions follow the catalog's seed where the seed is a faithful short form ('Barrel Finish
 Reserve: French Oak'); the maker's longer title is an alias."""
 from __future__ import annotations
@@ -127,6 +130,18 @@ def _specs(own: str) -> list[str]:
     return [s.strip() for s in block.split("|") if s.strip()]
 
 
+def _notes(own: str) -> str | None:
+    """The page's own Aroma / Taste / Finish lines — one token each after the label — never the quote or recipes below."""
+    i = own.find("Appearance|")
+    if i < 0:
+        return None
+    block = own[i:]
+    j = block.find("Filter by Spirit")
+    toks = [t.strip() for t in (block[:j] if j > 0 else block).split("|") if t.strip()]
+    parts = [f"{toks[k]}: {toks[k + 1].rstrip('. ')}." for k in range(len(toks) - 1) if toks[k] in ("Aroma", "Taste", "Finish")]
+    return " ".join(parts)[:900] or None
+
+
 def _mash(specs: list[str], own: str) -> str | None:
     if any(len(re.findall(r"\b(?:BW|RW)-\d", s)) >= 2 for s in specs):
         return None  # a blend of two named mash bills states no single recipe
@@ -170,6 +185,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Hard Truth", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw,
-        mash_style="rye" if rye else None, finish=finish, image_url=img,
+        mash_style="rye" if rye else None, finish=finish, tasting_notes=_notes(own), image_url=img,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

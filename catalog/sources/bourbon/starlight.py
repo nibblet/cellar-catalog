@@ -13,7 +13,8 @@ boilerplate repeated on unrelated products (Bottled-in-Bond and the non-bonded C
 verbatim) describing the distillery's usual floor, not a stated fact about that SKU — stripped before
 reading age; a genuine age ("aged slowly for a full decade" on the 10 Year Reserve) is unaffected. No
 page anywhere states mash bill percentages — only qualitative "3-grain"/"4-grain"/"sweet mash
-fermentation" — so mash_style stays unset throughout."""
+fermentation" — so mash_style stays unset throughout. `tasting_notes` is the page's own Tasting Notes block (Nose /
+Taste / Finish, not Appearance and not the placeholder "varies by release" lines), cut before the cocktail recipe."""
 from __future__ import annotations
 
 import html
@@ -80,6 +81,22 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+def _notes(own: str) -> str | None:
+    """The Tasting Notes block is `Label| text|` pairs; the cocktail recipe that follows is never read."""
+    i = own.find("Tasting Notes")
+    if i < 0:
+        return None
+    toks = [t.strip() for t in own[i + len("Tasting Notes"):].split("|") if t.strip()]
+    got = {}
+    for k in range(len(toks) - 1):
+        if toks[k] in ("Nose", "Taste", "Finish") and toks[k] not in got:
+            if not re.match(r"(varies|because each barrel|tasting notes vary)", toks[k + 1], re.I):
+                got[toks[k]] = toks[k + 1].rstrip(". ")
+        elif toks[k] in ("Featured Cocktail", "Sorry, we couldn't find any posts. Please try a different search."):
+            break
+    return " ".join(f"{label}: {got[label]}." for label in ("Nose", "Taste", "Finish") if label in got)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     path = url.replace("https://starlightdistillery.com/", "").strip("/")
     if path not in REFILE:
@@ -112,6 +129,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Starlight", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash_raw, mash_style=None,
-        description=_text(own.split("Tasting Notes", 1)[0][-700:]), image_url=html.unescape(img) if img else None,
+        description=_text(own.split("Tasting Notes", 1)[0][-700:]), tasting_notes=_notes(own), image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

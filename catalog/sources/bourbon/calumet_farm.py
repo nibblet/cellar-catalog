@@ -35,7 +35,9 @@ What is a row (decided here, so a re-run reproduces it):
   - What the maker itself calls discontinued ("Out to pasture - Discontinued": the 14 Year and the old 12 Year Single Rack
     Black) is DISCONTINUED_BY_MAKER. The shared writer reads that set (write.py `_gone`) and writes `discontinued = true` for
     those expressions instead of the usual `false`, so a re-run reproduces it. Rows the pages do not list stay as seeds.
-Availability on each page ("High", "Low/Rare") drives RARITY."""
+Availability on each page ("High", "Low/Rare") drives RARITY.
+tasting_notes is the spec table's own Nose / Taste / Finish rows (Color is a look, not a taste); the Centennial Rye, which has no
+table, gives its two flavor sentences."""
 from __future__ import annotations
 
 import html
@@ -133,6 +135,19 @@ def _image(page: str, years: float | None, expression: str) -> str | None:
     return None
 
 
+def _tasting(text: str) -> str | None:
+    """`text` is _text(): the page's <main> with `|` between cells. The spec table repeats Nose (uncorking / breathing)."""
+    parts = []
+    for key, body in re.findall(r"\| (Nose|Taste|Finish) \| ([^|]+)", text):
+        body = body.strip().rstrip(" ,;")
+        if body:
+            parts.append(f"{key}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    if parts:
+        return " ".join(parts)[:900]
+    flavor = [x for x in re.split(r"(?<=[.!])\s+", re.sub(r"\s*\|\s*", " ", text)) if re.search(r"undertones|notes of|flavors? of|flavor profile", x, re.I)]
+    return " ".join(flavor)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").replace(BASE.rstrip("/"), "").strip("/")
     if slug not in PAGES:
@@ -154,6 +169,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, mash_raw=_mash(text), image_url=_image(page, years, expression),
+        age_years=years, age_label=label, class_raw=class_raw, mash_raw=_mash(text), tasting_notes=_tasting(text), image_url=_image(page, years, expression),
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

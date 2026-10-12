@@ -3,7 +3,9 @@ own statement of what it sources and blends). One WordPress page per bottling un
 h1 name, then a run of tag pills — "AGED N YEARS", "M PROOF N.N% ALC/VOL", a class/finish tag ("Bourbon",
 "Rye Whiskey", "Maple Barrel Finish", "Mizunara Oak") — and a bottle shot as the first
 `attachment-post-thumbnail` image. Paradigm Rye states no age. The whole lineup is bourbon or rye; a page
-that doesn't say "Rye Whiskey" is bourbon."""
+that doesn't say "Rye Whiskey" is bourbon.
+`tasting_notes` is the page's own "TASTING Notes" panel (an optional lead sentence, then Aroma / Taste / Finish); the
+paragraph above it and the retailer, awards and product-attribute blocks below it are not read."""
 from __future__ import annotations
 
 import html
@@ -51,6 +53,33 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+_NOTE_LABELS = {"aroma", "taste", "finish"}
+_NOTES_END = re.compile(r"^(?:ORDER\b|AWARDS\b|Product Attributes|Search Locations|Post navigation)")
+
+
+def _tasting(flat: str) -> str | None:
+    segs = [x.strip() for x in flat.split("|") if x.strip()]
+    start = next((i for i, x in enumerate(segs) if x.lower() == "tasting notes"), None)
+    if start is None:
+        return None
+    lead, groups, label = [], {}, None
+    for x in segs[start + 1:]:
+        if _NOTES_END.match(x):
+            break
+        if x.lower() in _NOTE_LABELS:
+            label = x.title()
+            groups[label] = []
+        elif label:
+            groups[label].append(x)
+        else:
+            lead.append(x)
+    # A lead can open with the blend's story and name a sibling ("exemplifies the intensity of 10 Year"): keep only taste sentences.
+    sentences = [x for x in re.split(r"(?<=[.!?])\s+", " ".join(lead)) if re.search(r"\b(?:notes?|aromas?|palate|flavou?rs?|finish)\b", x, re.I)]
+    parts = [" ".join(sentences)] if sentences else []
+    parts += [f"{k}: {'; '.join(v).rstrip('. ')}." for k, v in groups.items() if v]
+    return " ".join(parts)[:900] if groups else None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -76,7 +105,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     img = (re.search(r'<img[^>]+src="([^"]+)"[^>]*class="attachment-post-thumbnail', page) or [None, None])[1]
     return BottlingRecord(
         brand_family="Widow Jane", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style="rye" if rye else None, description=desc,
+        class_raw=class_raw, mash_raw=None, mash_style="rye" if rye else None, description=desc, tasting_notes=_tasting(flat),
         image_url=html.unescape(img) if img else None, finish=finish,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

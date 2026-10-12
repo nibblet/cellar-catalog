@@ -15,7 +15,10 @@ batch notes) is a range, not a statement, and the page's "6yr 6mo / 7yr 7mo" are
 Class is the label's "Kentucky Straight Bourbon Whiskey": the page calls the product "a blend of Kentucky straight
 bourbon", which is bourbon blended with bourbon, never `blend` (High West rule). The finish is the brand's own toasted
 oak. Not imported: the "Wheated Single Barrel" /shop card (a hand-picked Bourbon Bishop / Bourbon Papi barrel at
-129.6 proof — a pick, not a bottling) and the single-barrel selection program."""
+129.6 proof — a pick, not a bottling) and the single-barrel selection program.
+`tasting_notes` is the run of sentences in the bottling's own copy from its first nose / "aromas of" sentence to its
+last "finish" sentence (for the Toasted Barrel Blend, inside the newest batch's block only, never an older batch's or
+the page-top teaser); the ISC barrel-toast descriptors, the batch story and the awards are not notes."""
 from __future__ import annotations
 
 import html
@@ -56,6 +59,26 @@ def _flatten(page: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+NOSE_CUE = re.compile(r"\bnose\b|\baromas? of\b|\bfirst pour\b|\bfirst sip\b", re.I)
+
+
+def _notes(slug: str, own: str) -> str | None:
+    if slug == "ourblends":  # one block per batch, oldest first: only the newest block describes the current bottling
+        blocks = [b for b in re.split(r"\|\s*#\d+:\s*", own)[1:] if len(b) > 300]
+        if not blocks:
+            return None
+        own = blocks[-1].split("Alc. by Vol")[0]
+    text = re.sub(r"\s+", " ", re.sub(r"\s*\|\s*", " ", own)).strip()
+    sents = re.split(r"(?<=[.!?])\s+(?=[A-Z“\"])", text)
+    start = next((k for k, x in enumerate(sents) if NOSE_CUE.search(x)), None)
+    if start is None:
+        return None
+    end = max((k for k, x in enumerate(sents) if k >= start and re.search(r"\bfinish\b", x, re.I)), default=start)
+    first = re.sub(r"^.*Bottled at [^,]*, ", "", sents[start])  # "...oak list (no period) Bottled at 122.4 proof (...), this whiskey opens with aromas of ..."
+    first = first[:1].upper() + first[1:]
+    return " ".join([first, *sents[start + 1:end + 1]])[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -86,7 +109,7 @@ def parse(url: str, page: str) -> BottlingRecord | None:
 
     return BottlingRecord(
         brand_family="H.K. Young", expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, finish=FINISH, description=desc,
+        age_years=years, age_label=label, class_raw=class_raw, finish=FINISH, description=desc, tasting_notes=_notes(slug, own),
         image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}),
         is_core_range=expression in CORE,
     )

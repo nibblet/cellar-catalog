@@ -6,7 +6,7 @@ app's wheel extraction (`pnpm seed:enrich --type bourbon`, gpt-5-nano) turns int
 
 Nothing here crawls: each module's `list_urls` runs against a no-network fetcher that looks in every cache directory,
 and a bottling is only read when its page is already cached. The notes are `rec.tasting_notes or rec.description`
-(modules that parse neither contribute nothing). A blurb counts only if it names at least MIN_TERMS distinct flavors
+(modules that parse neither contribute nothing; a text shared by two bottles in a module is skipped as the maker's copy-paste). A blurb counts only if it names at least MIN_TERMS distinct flavors
 from the wheel's own leaves and synonyms, grain, oak and 'smoke' excluded because mash bills and cask lines name them
 without describing taste. Rows that already have a real wheel are skipped; the wheel extraction only targets empty ones.
 Env as export.py: CELLAR_ENV_FILE=/Volumes/Lexar/cellar/apps/web/.env.local"""
@@ -146,6 +146,10 @@ def main():
             n = notes_of(rec)
             if n:
                 by_key[(rec.source_url, rec.name)] = (n, rec)
+        # The same text on two bottles in one module is the maker's copy-paste (Wyoming, Garrison, Four Gate, Chicken Cock...), not
+        # two profiles: neither is trusted.
+        norm = lambda t: re.sub(r"\W+", " ", t.lower()).strip()
+        shared = {t for t, c in Counter(norm(n) for n, _ in by_key.values()).items() if c > 1}
         n_notes = sum(1 for n, _ in by_key.values() if len(hits(n)) >= MIN_TERMS)
         covered = new = 0
         for f in rep.matched + rep.corrections:
@@ -154,7 +158,7 @@ def main():
                 continue
             rows_by_id[row["id"]] = row
             got = by_key.get((f["source_url"], f["name"]))
-            if not got or len(hits(got[0])) < MIN_TERMS:
+            if not got or len(hits(got[0])) < MIN_TERMS or norm(got[0]) in shared:
                 continue
             covered += 1
             has_wheel = bool(row.get("wheel_vector"))

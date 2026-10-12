@@ -3,7 +3,9 @@ nav. One WordPress page per bottling: the proof, where stated, is in prose ("bot
 "is a 93-proof whiskey", "this 84-proof Tennessee whiskey"); Master Blend, Single Barrel and Single
 Barrel Rye state only "cask strength" / "barrel strength" with no number. Uncut/Unfiltered Rye states
 its age as "raised for at least four years" (the maker's own word for "aged"). The bottle shot is the
-one image whose alt text starts "Bottle of" / "Bottle Image of"."""
+one image whose alt text starts "Bottle of" / "Bottle Image of". tasting_notes is the page's own capitalised NOSE / PALATE (or
+TASTE) / FINISH lines, laid out three ways (a "TASTING NOTES" block, bare labels, "NOSE: ..."); Single Barrel's "TASTING NOTES"
+only says the profile varies by barrel, and the other pages have none, so those stay None."""
 from __future__ import annotations
 
 import html
@@ -73,9 +75,14 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     tags = re.findall(r"<img[^>]+>", page)
     img = next((g.group(1) for t in tags if (g := re.search(r'src="([^"]+)"', t)) and re.search(r"bottle", g.group(1), re.I) and "footer-bottles" not in g.group(1)), None) \
         or next((g.group(1) for t in tags if re.search(r'alt="Bottle of', t) and (g := re.search(r'src="([^"]+)"', t))), None)
+    got: dict[str, str] = {}
+    for tag, text in re.findall(r"\b(NOSE|PALATE|TASTE|FINISH)\b[\s:|.]*([^|]+)", own):  # capitals only: prose says "finish" too
+        got.setdefault(tag, text.strip())
+    notes = " ".join(f"{k.title()}: {v}" for k, v in got.items() if v) or None
+    notes = notes[:900].rsplit(" ", 1)[0] if notes and len(notes) > 900 else notes
     desc = _text((re.search(r"Whiskey\| ([^|]{40,500})", own) or [None, None])[1])
     return BottlingRecord(
         brand_family="Uncle Nearest", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, image_url=html.unescape(img) if img else None,
+        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, tasting_notes=notes, image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

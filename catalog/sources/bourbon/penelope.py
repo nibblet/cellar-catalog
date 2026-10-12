@@ -4,7 +4,8 @@ Facts" / "Whiskey Facts" spec block instead: one `<li><h4>label</h4><p>value</p>
 Process, Proof, Age (sometimes relabelled "Age/Barrel Char", and on the Toasted series that field holds
 the char level, not a year), and Mash Bill. The flagship Barrel Strength page has a content-entry error
 (its proof sits in the Type & Process field, not the Proof field), so proof is read from whichever field
-states a number. Five ready-to-pour cocktail SKUs on the same store are not whiskey and are skipped."""
+states a number. Five ready-to-pour cocktail SKUs on the same store are not whiskey and are skipped.
+tasting_notes is the page's own "Tasting Notes" list (Aroma / Body / Finish, as 'Aroma: ... Palate: ... Finish: ...')."""
 from __future__ import annotations
 
 import html
@@ -66,6 +67,19 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+def _tasting(page: str) -> str | None:
+    """The page's own `<h3>Tasting Notes</h3><ul><li><h4>Aroma|Body|Finish</h4><p>..</p>` list. Other <h4> rows
+    ("Forward Notes" repeats the marketing blurb) are skipped."""
+    m = re.search(r"<h3>\s*Tasting notes\s*</h3>(.*?)</ul>", page, re.S | re.I)
+    parts = []
+    for label, body in re.findall(r"<h4>(.*?)</h4>\s*<p>(.*?)</p>", m.group(1), re.S) if m else []:
+        key = {"aroma": "Aroma", "body": "Palate", "body notes": "Palate", "finish": "Finish"}.get((_text(label) or "").lower())
+        body = _text(body)
+        if key and body:
+            parts.append(f"{key}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = url.rstrip("/").split("/")[-1]
     if handle not in REFILE:
@@ -111,6 +125,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         img = "https://" + img[7:]
     return BottlingRecord(
         brand_family="Penelope", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, mash_style=None, description=desc,
+        class_raw=class_raw, mash_raw=mash_raw, mash_style=None, description=desc, tasting_notes=_tasting(page),
         image_url=html.unescape(img) if img else None, aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

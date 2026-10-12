@@ -16,7 +16,8 @@ Facts come from the page's own spec block / prose, nothing else on the site:
     ("9 Year, 9 Month Old" = 9.75).
   * mash bill: a recipe only when the page prints exactly one; a blend of different mash bills has none.
   * the flagship (Split Stave by Kelvin) and the two 10-year single-barrel programs state no proof.
-The bottle shot is the second distinct image on the page (the first is a site-wide texture)."""
+The bottle shot is the second distinct image on the page (the first is a site-wide texture).
+tasting_notes is the page's own NOSE / TASTE / FINISH block (the "?" placeholders on unreleased-notes pages are dropped)."""
 from __future__ import annotations
 
 import html
@@ -226,6 +227,19 @@ def _description(own: str) -> str | None:
     return re.sub(r"\s+", " ", t).strip()[:700] or None
 
 
+def _tasting(own: str) -> str | None:
+    """The page's NOSE / TASTE / FINISH block, as 'Nose: ... Taste: ... Finish: ...'; '?' means the maker left it blank."""
+    if "TASTING NOTES" not in own:
+        return None
+    flat = own.split("TASTING NOTES", 1)[1].replace("|", " ")
+    parts = []
+    for key, body in re.findall(r"\b(NOSE|TASTE|FINISH)\b\s*(.*?)(?=\b(?:NOSE|TASTE|FINISH)\b|$)", flat):
+        body = (_text(body) or "").rstrip(" ,;")
+        if len(body.strip("?. ")) > 1:
+            parts.append(f"{key.title()}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | list[BottlingRecord] | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -260,6 +274,6 @@ def parse(url: str, page: str) -> BottlingRecord | list[BottlingRecord] | None:
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=BASE + slug, proof=_proof(own),
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=_mash(own), description=desc,
-        image_url=img, finish=_finish(own), msrp_usd=msrp, aliases=sorted(set(aliases) - {name}),
+        tasting_notes=_tasting(own), image_url=img, finish=_finish(own), msrp_usd=msrp, aliases=sorted(set(aliases) - {name}),
         is_core_range=expression in CORE,
     )

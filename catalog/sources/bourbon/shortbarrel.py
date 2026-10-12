@@ -15,7 +15,11 @@ carousel blurb ("a wheated bourbon" under a headline about four grains) and carr
 ("This stays aligned with the current page's claims ..."); the name and the body copy say four grain, which
 is what is read. Skipped: the two Shortlist Barrel Pick pages (one-off barrels for a members program), the
 ALW 8-Year single barrel and The Shortlist #2 (empty copy), Apple Brandy (brandy), O4D Honey Gin, The Shortlist
-membership and merch."""
+membership and merch.
+
+`tasting_notes` is the page's own "Tasting Notes" section (Nose / Palate / Finish lines, or one paragraph) inside the Product
+Notes. Most pages have none: Bees Knees' regional honey profiles and Afterswarm's Wildflower-versus-Meadowfoam comparison
+describe several releases at once, so they are deliberately not taken as one bottle's notes."""
 from __future__ import annotations
 
 import html
@@ -85,6 +89,26 @@ def _notes(page: str) -> str:
     return t.strip()
 
 
+_NOTE_LABELS = {"nose", "palate", "finish"}
+
+
+def _tasting(notes: str) -> str | None:
+    segs = [x.strip() for x in notes.split("|") if x.strip()]
+    start = next((i for i, x in enumerate(segs) if re.match(r"tasting notes\s*:?$", x, re.I)), None)
+    if start is None:
+        return None
+    body = segs[start + 1:]
+    parts, j = [], 0
+    while j + 1 < len(body) and body[j].rstrip(":").lower() in _NOTE_LABELS:
+        parts.append(f"{body[j].rstrip(':').title()}: {body[j + 1].rstrip('. ')}.")
+        j += 2
+    if parts:
+        return " ".join(parts)[:900]
+    if body and not body[0].startswith("Loading image"):
+        return re.sub(r"\s+", " ", body[0]).strip()[:900]  # one paragraph ("TASTING NOTES: The nose opens with ...")
+    return None
+
+
 def _proof(notes: str, handle: str) -> float | None:
     if handle == AFTERSWARM_I:
         m = re.search(r"AFTERSWARM II: MEADOWFOAM\s*\|?.*?Proof:\s*(\d{2,3}(?:\.\d+)?)", notes, re.S)
@@ -128,8 +152,8 @@ def parse(url: str, page: str) -> list[BottlingRecord] | BottlingRecord | None:
         mash = "Four Grain"  # the name and the body copy say four grain; the sibling blurb that says wheated is not read
     rec = BottlingRecord(
         brand_family="Shortbarrel", expression=expression, name=name, source_url=url, proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash, description=_text(notes[:600]), image_url=html.unescape(img) if img else None,
-        finish=finish, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
+        class_raw=class_raw, mash_raw=mash, description=_text(notes[:600]), tasting_notes=_tasting(notes),
+        image_url=html.unescape(img) if img else None, finish=finish, aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )
     if handle != AFTERSWARM_I:
         return rec

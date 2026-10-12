@@ -29,7 +29,11 @@ so expressions are named by what the release is.
 
 Families follow the catalog's brand-per-family habit (Bowman Brothers, John J. Bowman, new Isaac Bowman); the Abraham
 releases and the Cask Strength series stay in the seed's own 'A. Smith Bowman' family so the two existing Abraham rows
-match in place instead of orphaning."""
+match in place instead of orphaning.
+
+tasting_notes is only the sentences of the page's own copy that describe aroma, taste or finish (the same paragraph also
+carries barrel history, release dates and ages, which are not taste): the release paragraph on a brand / Abraham page, the
+"Description" block on a shop page, and the "TASTING NOTES" block of a lottery page (which the page prints twice)."""
 from __future__ import annotations
 
 import html
@@ -125,6 +129,34 @@ def _flat(page: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+# A sentence describes taste when it names the senses or a flavor list; "to finish our ..." and "finished" are cask talk.
+TASTE = re.compile(r"\b(?:aromas?|nose|palate|aftertaste|tast(?:e|es|eful|ing)|flavou?rs?|notes?|hints? of|mouthfeel|creamy|mix of)\b"
+                   r"|(?<!\bto )\bfinish(?:es)?\b", re.I)
+PROSE_END = re.compile(r"^(?:VISIT US|ORDER ONLINE|WHERE TO BUY|\*Sold Out)", re.I)
+
+
+def _taste_sentences(cells: list[str]) -> str | None:
+    """Join the cells of one prose block and keep the sentences that match TASTE (at most ~900 chars)."""
+    text = re.sub(r"\s+([,.;])", r"\1", re.sub(r"\s+", " ", " ".join(cells)).replace("“", "").replace("”", ""))  # inline links leave gaps
+    out = [x for x in re.split(r"(?<=[.!?])\s+", text) if TASTE.search(x)]
+    t = " ".join(x.strip() for x in out).strip()
+    return (t[:900].rsplit(" ", 1)[0] if len(t) > 900 else t) or None
+
+
+def _release_notes(block: str) -> str | None:
+    """A brand / Abraham page: from the first cell of running prose (title cells are Title Case) to the call-to-action."""
+    cells = [c.strip() for c in block.split("|") if c.strip()]
+    start = next((i for i, c in enumerate(cells) if sum(w[:1].islower() for w in c.split()) >= 3), None)
+    if start is None:
+        return None
+    body = []
+    for c in cells[start:]:
+        if PROSE_END.match(c):
+            break
+        body.append(c)
+    return _taste_sentences(body)
+
+
 PROOF_BLOCK = re.compile(r"(\d{2,3}(?:\.\d+)?)\|\s*PROOF\|")
 
 
@@ -194,10 +226,19 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     else:
         desc = _text(scope.split("ALC/VOL|", 1)[-1][:600])
 
+    if shop:
+        dm = re.search(r"Description\s*\|\s*Description\s*\|(.*?)\|\s*SHIPPING\|", own)
+        notes = _taste_sentences(dm.group(1).split("|")) if dm else None
+    elif lottery:
+        tm = re.search(r"TASTING\|\s*NOTES\|(.*?)(?:\|\s*TASTING NOTES\||$)", scope, re.S)
+        notes = _taste_sentences(tm.group(1).split("|")) if tm else None  # the page prints this block twice; the first is read
+    else:
+        notes = _release_notes(scope.split("ALC/VOL|", 1)[-1])
+
     return BottlingRecord(
         brand_family=family, expression=expression, name=name,
         source_url=f"https://asmithbowman.com/{'product/' if shop else ''}{slug}/", proof=proof, age_years=years, age_label=label,
         class_raw=class_raw, mash_raw=None, mash_style=("rye" if rye else None), description=desc,
-        image_url=html.unescape(img) if img else None, finish=finish, msrp_usd=msrp,
+        tasting_notes=notes, image_url=html.unescape(img) if img else None, finish=finish, msrp_usd=msrp,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE and family != FAM,
     )

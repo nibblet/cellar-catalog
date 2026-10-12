@@ -29,7 +29,10 @@ Not imported, and why: Single Barrel Whiskey (a retailer/bar program; every barr
 the Limited Releases page (Nancy's Pick monthly, Distillery Exclusives #01-#02, Rare Stock #01-#08, each a one-off or
 small-run release) and the Archive (Distillery Reserve Series, Monster Mash 2020-2025, earlier batches): these are listed with
 proofs but are one-off bottlings, not the standing lineup, and no seed asks for them; they are cached as evidence. American
-Gin is not whiskey. Merchandise (`/product/...`) is not whiskey."""
+Gin is not whiskey. Merchandise (`/product/...`) is not whiskey.
+`tasting_notes` is the page's own Nose / Palate / Finish lines (the "Tasting notes" tile, Tanager's NOSE block, and for the
+Bottled in Bond rows the notes of the same newest listing the proof and mash bill come from); the press quotes and the
+older releases' notes on the series page are not read."""
 from __future__ import annotations
 
 import html
@@ -112,6 +115,23 @@ def _image(page: str, keyword: str | None = None) -> str | None:
     return None
 
 
+def _notes(nose: str | None, palate: str | None, finish: str | None) -> str | None:
+    parts = [f"{label}: {t[:1].upper()}{t[1:]}." for label, t in (("Nose", nose), ("Palate", palate), ("Finish", finish))
+             if t and t.strip(" .")]
+    return " ".join(p.replace("..", ".") for p in parts)[:900] or None
+
+
+def _bib_notes(tail: str) -> str | None:
+    """The NOSE: / PALATE: / FINISH: lines (all caps, joined by stray `|` and zero-width joiners) of one listing."""
+    m = re.match(r"\s*TASTING NOTES:\|(.*?)\|\s*(?:SOLD OUT|COMING SOON|NOW AVAILABLE|AVAILABLE)", tail, re.I | re.S)
+    if not m:
+        return None
+    body = re.sub(r"\s+", " ", m.group(1).replace("\u200d", " ").replace("|", " ")).strip()
+    got = {k.upper(): v.strip(" .") for k, v in re.findall(r"(NOSE|PALATE|FINISH)\s*:\s*(.*?)(?=\s+(?:NOSE|PALATE|FINISH)\s*:|$)", body)}
+    low = {k: v.lower() for k, v in got.items()}
+    return _notes(low.get("NOSE"), low.get("PALATE"), low.get("FINISH"))
+
+
 def _bib(url: str, page: str) -> list[BottlingRecord]:
     text = _flat(page)
     out = []
@@ -124,7 +144,7 @@ def _bib(url: str, page: str) -> list[BottlingRecord]:
         name = f"{FAMILY} {expression}"
         out.append(BottlingRecord(
             brand_family=FAMILY, expression=expression, name=name, source_url=url, proof=100.0,  # the listing prints "100 PROOF"
-            class_raw=class_raw, mash_raw=mash, image_url=_image(page, key),
+            class_raw=class_raw, mash_raw=mash, tasting_notes=_bib_notes(text[last.end():]), image_url=_image(page, key),
             aliases=sorted(set(aliases) - {name}), is_core_range=False,
         ))
     return out
@@ -153,8 +173,14 @@ def parse(url: str, page: str):
         proof = float(m.group(1)) if m else None
         mash = _mash_block(text)
 
+    if path == "tanager-cigar-blend-bourbon-whiskey":
+        nm = re.search(r"\bNOSE\| (.*?)\| Palate\| (.*?)\| Finish\| (.*?)\|", text)
+    else:
+        nm = re.search(r"Tasting notes\| Nose\| (.*?)\| Palate\| (.*?)\| Finish\| (.*?)\| Mashbill", text)
+    notes = _notes(*nm.groups()) if nm else None
+
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=url, proof=proof,
-        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, image_url=_image(page),
+        age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, tasting_notes=notes, image_url=_image(page),
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

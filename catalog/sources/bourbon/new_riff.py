@@ -4,7 +4,8 @@ a structured "Age / Proof: | Aged at least N years / M Proof" line (a single-bar
 `class="wp-post-image"` bottle shot. The site also sells a gin (not whiskey) and New Make (unaged, not a
 catalog bottling) — both skipped. Yearly limited series (Single Malt, Silver Grove Bourbon and Rye,
 Headliner) keep only the current vintage; the single-barrel "Selection" and "Cigar Club" pages describe
-the program, not one bottling, and state no proof, so they are skipped rather than crawled."""
+the program, not one bottling, and state no proof, so they are skipped rather than crawled. `tasting_notes` is the
+page's own "Nose: / Palate: / Finish:" lines under the Age / Proof block (not the story or "You Might Also Like")."""
 from __future__ import annotations
 
 import html
@@ -70,6 +71,29 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+def _notes(flat: str) -> str | None:
+    """Nose / Palate / Finish: each label is followed by one `|` cell; only the block under "Age / Proof:" is read."""
+    i = flat.find("Age / Proof:")
+    if i < 0:
+        return None
+    block = flat[i:]
+    j = block.find("Our Whiskey Making Process")
+    toks = [t.strip() for t in (block[:j] if j > 0 else block[:3000]).split("|") if t.strip()]
+    got = {toks[k].rstrip(":"): toks[k + 1] for k in range(len(toks) - 1) if toks[k] in ("Nose:", "Palate:", "Finish:")}
+    parts = [f"{label}: {got[label].rstrip('. ')}." for label in ("Nose", "Palate", "Finish") if label in got]
+    if sum(map(len, parts)) > 880:  # one long review (Single Malt): keep each of the three to a clause boundary
+        parts = [_clip(x, 290) for x in parts]
+    return " ".join(parts) or None
+
+
+def _clip(text: str, n: int) -> str:
+    if len(text) <= n:
+        return text
+    cut = text[:n]
+    k = max(cut.rfind(c) for c in ";,.")
+    return (cut[:k] if k > n // 2 else cut.rsplit(" ", 1)[0]).rstrip(" ,;:.") + "."
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -97,6 +121,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     img = (re.search(r'src="([^"]+)"[^>]*class="wp-post-image"', page) or [None, None])[1]
     return BottlingRecord(
         brand_family="New Riff", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, image_url=html.unescape(img) if img else None,
+        class_raw=class_raw, mash_raw=None, mash_style=mash, description=desc, tasting_notes=_notes(flat), image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

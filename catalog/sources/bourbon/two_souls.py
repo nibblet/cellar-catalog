@@ -44,7 +44,10 @@ Not imported, and why:
 Added: the two J. Henry & Sons 7-Year rum-cask releases (bourbon 115.32, rye 124.58), in stock now and in the "Inner Circle"
 collection, have no seed row.
 
-Nothing is core: every release is a one-off barrel."""
+Nothing is core: every release is a one-off barrel.
+
+`tasting_notes` is the barrel's own "Tasting Notes:" paragraph from `body_html` (read up to the end of that block, so the
+sales copy and "The Nerdy Bits" that follow are never part of it)."""
 from __future__ import annotations
 
 import html
@@ -182,6 +185,15 @@ def _age(nerdy: str) -> tuple[float | None, str | None]:
     return years, label
 
 
+def _tasting(body_html: str | None) -> str | None:
+    m = re.search(r"Tasting Notes\s*:?(?:\s|&nbsp;|\xa0)*(.*?)(?:</p>|</div>|</li>|<br\s*/?>|<p[\s>]|<div[\s>])", body_html or "", re.S | re.I)
+    if not m:
+        return None
+    text = re.sub(r"^:\s*", "", _flat(m.group(1))).strip()
+    text = re.sub(r"^([A-Z]) (?=[a-z])", r"\1", text)  # a styled drop cap splits the first letter off ("C orn fritters")
+    return text[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     handle = url.rstrip("/").split("/")[-1].removesuffix(".json")
     if handle not in PAGES:
@@ -199,4 +211,4 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family=FAMILY, expression=expression, name=name, source_url=f"https://twosoulsspirits.com/products/{handle}",
         proof=proof, age_years=years, age_label=label, class_raw=class_raw, mash_raw=mash, mash_style=style, finish=finish,
-        image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=False)
+        tasting_notes=_tasting(data.get("body_html")), image_url=img, aliases=sorted(set(aliases) - {name}), is_core_range=False)

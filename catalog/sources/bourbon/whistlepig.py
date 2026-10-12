@@ -26,7 +26,9 @@ Not parsed, and why:
   - GraveStock is a Liquid Death collaboration (86 proof wheat whiskey); the seeded 'CampStock Wheat' is not
     claimed to be it — same strength, different name, no page tying them together.
 The 18 Year is 'Double Malt Rye' on its page title and shop listing and 'Double Double Rye' in the nav; the
-shop title is the name."""
+shop title is the name.
+tasting_notes is the marketing page's own "tasting notes" Nose / Palate / Finish block when cached; the shop pages have none, so they
+give only the copy sentences that name two or more flavors (a sentence about oak, awards, pairings or cocktails is not taste)."""
 from __future__ import annotations
 
 import html
@@ -104,13 +106,32 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+_FLAVOR = re.compile(r"spic(?:e|y)|peppery|floral|earthy|caramel|vanilla|toffee|maple|fruit|sweet|smoky|honey|chocolate|nutty|\bnotes\b", re.I)
+
+
+def _tasting(flat: str, copy: str | None) -> str | None:
+    """`flat` is the whole flattened page (the marketing page's tasting-notes block follows its 'find a store' link);
+    `copy` is the bottle's own prose, used only when that block is absent."""
+    m = re.search(r"\|\s*tasting notes\|(.*?)(?:\| Ways to Enjoy\||$)", flat, re.I)
+    if m:
+        parts = []
+        for key, body in re.findall(r"\|\s*(Nose|Palate|Finish)\|\s*([^|]+)", "|" + m.group(1)):
+            body = body.strip()
+            parts.append(f"{key}: {body}" + ("" if body.endswith((".", "!")) else "."))
+        return " ".join(parts)[:900] or None
+    sentences = re.split(r"(?<=[.!?])\s+", copy or "")
+    keep = [x for x in sentences if len({t.lower() for t in _FLAVOR.findall(x)}) >= 2 and not re.search(r"cocktail|drinks?\b|\bsour\b|\bstir\b", x, re.I)]
+    return " ".join(keep)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     path = url.replace(BASE, "").strip("/")
     if path not in REFILE:
         return None
     expression, aliases, class_raw = REFILE[path]
     name = f"WhistlePig {expression}"
-    own = _own_copy(_flatten(page), path)
+    flat = _flatten(page)
+    own = _own_copy(flat, path)
 
     tile = re.search(r"\|\s*(\d{2,3}(?:\.\d+)?)\|\s*Proof\|", own, re.I)
     prose = re.search(r"\b(\d{2,3}(?:\.\d+)?)[- ]proof\b", own, re.I)
@@ -140,6 +161,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="WhistlePig", expression=expression, name=name, source_url=url, proof=proof,
         age_years=years, age_label=label, class_raw=class_raw, mash_raw=MASH.get(expression), description=desc,
-        image_url=img, finish=FINISH.get(expression), aliases=sorted(set(aliases) - {name}),
+        tasting_notes=_tasting(flat, desc), image_url=img, finish=FINISH.get(expression), aliases=sorted(set(aliases) - {name}),
         is_core_range=expression in CORE,
     )

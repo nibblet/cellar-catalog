@@ -10,7 +10,10 @@ a 5-to-15-year blend. Neither age is a single number (a blend's age range is a d
 `age_years`; the existing seed's 12 is not supported by the maker and is left untouched). "Blend of Kentucky
 Straight Bourbons" is a component statement, not the label's class: the class is read as straight bourbon
 (`spirit_type()` would otherwise see a blend, the same call Doc Swinson's makes for its blends of straight
-bourbons). The product's bottle photo is the first `<div class="slide"><img>` in `.media-gallery`."""
+bourbons). The product's bottle photo is the first `<div class="slide"><img>` in `.media-gallery`.
+
+`tasting_notes` is the page's FLAVOR and AROMA lines (the copy's own "fruit notes ... from our brandy finish" sentence is
+marketing and the COLOR line is not taste)."""
 from __future__ import annotations
 
 import html
@@ -65,6 +68,9 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     cm = re.search(r"WHAT MAKES IT SPECIAL\|\s*(.*?)\|\s*FLAVOR", own)
     copy = cm.group(1) if cm else ""
 
+    sm = re.search(r"WHAT MAKES IT SPECIAL\|.*?\|\s*FLAVOR\|\s*(.*?)\|\s*AROMA\|\s*(.*?)\|\s*COLOR", own)
+    notes = f"Aroma: {sm.group(2).strip().rstrip('.')}. Flavor: {sm.group(1).strip().rstrip('.')}." if sm else None
+
     pm = re.search(r"(?:bottled at|at)\s+(\d{2,3}(?:\.\d+)?)\s*proof", copy, re.I) or re.search(r"(\d{2,3}(?:\.\d+)?)\s*proof", copy, re.I)
     proof = float(pm.group(1)) if pm else None
 
@@ -78,6 +84,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Copper & Kings", expression=expression, name=name,
         source_url=f"https://copperandkings.com/product/{handle}/", proof=proof, age_years=None, age_label=age_label,
-        class_raw="Kentucky Straight Bourbon Whiskey", description=_text(copy)[:600] if copy else None,
+        class_raw="Kentucky Straight Bourbon Whiskey", description=_text(copy)[:600] if copy else None, tasting_notes=notes,
         image_url=image, finish="Brandy Barrels", aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )

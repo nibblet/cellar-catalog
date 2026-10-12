@@ -23,7 +23,9 @@ Rye page mentions is the barrel-entry proof, never the bottling's.
 `class_raw` carries "Bottled in Bond" because the brand states the whole core lineup is — `flags()` then
 sets `bottled_in_bond` — and the wheated page says so itself ("the first bottled-in-bond wheated sweet
 mash bourbon released since Prohibition"). The bottle photo is the hero `Group-22N.webp` carried in the
-page's lazy-load `data-imgsrc`; the product pages have no og:image."""
+page's lazy-load `data-imgsrc`; the product pages have no og:image.
+tasting_notes is the page's own FLAVOR PROFILE block (Nose / Taste / Finish; Color is a look). The Rye and High Rye Bourbon pages print
+the same profile word for word on the maker's site; each page's own is kept."""
 from __future__ import annotations
 
 import html
@@ -64,6 +66,15 @@ def _flat(fragment: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+def _tasting(own: str) -> str | None:
+    m = re.search(r"FLAVOR PROFILE\|(.*?)\| AWARDS\|", own)
+    parts = []
+    for key, body in re.findall(r"\b(Nose|Taste|Finish):\|\s*([^|]+)", m.group(1)) if m else []:
+        body = body.strip()
+        parts.append(f"{key}: {body}" + ("" if body.endswith((".", "!")) else "."))
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     global _BIB_PROOF
     slug = url.rstrip("/").split("/")[-1]
@@ -82,6 +93,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Wilderness Trail", expression=expression, name=f"Wilderness Trail {expression}",
         source_url=url, proof=_BIB_PROOF, age_years=None, age_label=None, class_raw=cls, mash_raw=None,
-        description=desc, image_url=img.group(1) if img else None, aliases=sorted(set(aliases)),
+        description=desc, tasting_notes=_tasting(own), image_url=img.group(1) if img else None, aliases=sorted(set(aliases)),
         is_core_range=expression in CORE,
     )

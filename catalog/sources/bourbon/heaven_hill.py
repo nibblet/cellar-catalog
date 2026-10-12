@@ -3,7 +3,8 @@ elijahcraig.com for the aged single barrels and Toasted Barrel. All hand-built P
 pages from one agency: the facts sit in a "Proof: | 94 Proof | Age: | 8-12 Years Old" block, the bottle
 in an images/bottles/*.png. The distillery site's sitemap lists a third of its product pages, so the
 pages are listed here by hand and cited one by one; a page that stops existing shows up as a fetch
-error, not as a silent gap."""
+error, not as a silent gap. `tasting_notes` is the page's own Aroma/Nose, Taste and Finish lines (the colour line and the
+reviewer quotes are left out)."""
 from __future__ import annotations
 
 import html
@@ -87,6 +88,22 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+NOTE_LABELS = (("Aroma", "Aroma|Nose"), ("Taste", "Taste"), ("Finish", "Finish"))
+
+
+def _tasting_notes(page: str) -> str | None:
+    """The bottle's own Aroma/Nose, Taste and Finish lines, from either layout: `<li><span>Aroma:</span> ...</li>` (the
+    distillery site) or `<h3>Aroma:</h3><p>...</p>` (elijahcraig.com). First hit per label, since a page can print its block twice."""
+    parts = []
+    for out, label in NOTE_LABELS:
+        m = (re.search(rf"<li>\s*<span>\s*(?:{label})\s*:?\s*</span>\s*:?\s*(.*?)</li>", page, re.S | re.I)
+             or re.search(rf"<h3>\s*(?:{label})\s*:?\s*</h3>\s*<p[^>]*>(.*?)</p>", page, re.S | re.I))
+        text = _text(m.group(1)) if m else None
+        if text:
+            parts.append(f"{out}: {text.rstrip('.')}.")
+    return " ".join(parts)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     family, expression, aliases, *fixed_image = PAGES[url]
     flat = html.unescape(re.sub(r"<[^>]+>", "|", re.sub(r"<(script|style|svg|noscript)[^>]*>.*?</\1>", "", page, flags=re.S)))
@@ -126,6 +143,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     mash = "wheated" if (family in WHEATED or "Wheated" in name) and "Double Mash" not in name else None  # else from the stated recipe
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, mash_style=mash, description=desc, image_url=img,
+        class_raw=class_raw, mash_raw=mash_raw, mash_style=mash, description=desc, tasting_notes=_tasting_notes(page), image_url=img,
         aliases=sorted({*aliases, title.split("|")[-1].strip()} - {name, ""}), is_core_range=not NOT_CORE.search(name),
     )

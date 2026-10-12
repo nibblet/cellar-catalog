@@ -5,7 +5,8 @@ proof, where stated, is in prose ("Bottled at 117.8 Proof (58.9% ABV)"). The Sig
 (port-finished bourbon, rum-finished rye) state no proof anywhere on the site, so they are listed but not
 confirmed. Cask Strength keeps every edition's page: the newest edition is the bottling. The Cellar
 Collection is one bottling whose current volume is the newest page. The Distillery Series (gift-shop
-releases on one index page) and the private-selection barrel program are not catalog bottlings."""
+releases on one index page) and the private-selection barrel program are not catalog bottlings. `tasting_notes` is the
+page's own Nose / Palate / Finish block (the intro sentence above it is marketing and is left out)."""
 from __future__ import annotations
 
 import html
@@ -76,6 +77,16 @@ def _product(page: str) -> dict:
     return {}
 
 
+def _tasting_notes(page: str) -> str | None:
+    """The product block's Nose / Palate / Finish entries (`block-single-product__note_name` + `_description`), first hit per label."""
+    got: dict[str, str] = {}
+    for name, desc in re.findall(r'class="block-single-product__note_name">\s*([^<]+?)\s*</div>\s*<div[^>]*note_description[^>]*>(.*?)</div>', page, re.S):
+        label, text = name.strip().title(), _text(desc)
+        if label in ("Nose", "Palate", "Finish") and text and label not in got:
+            got[label] = text
+    return " ".join(f"{k}: {v.rstrip('.')}." for k, v in got.items())[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     parts = urlparse(url).path.rstrip("/").split("/")
     collection, slug = parts[-2], parts[-1]
@@ -139,6 +150,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
         aliases.add(f"Angel's Envy Cellar Collection {slug[:4]}")
     return BottlingRecord(
         brand_family="Angel's Envy", expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=None, mash_style="rye" if rye else None, description=desc, image_url=html.unescape(img) if img else None,
+        class_raw=class_raw, mash_raw=None, mash_style="rye" if rye else None, description=desc, tasting_notes=_tasting_notes(page), image_url=html.unescape(img) if img else None,
         finish=finish, aliases=sorted(a for a in aliases if a and a != name), is_core_range=not NOT_CORE.search(name),
     )

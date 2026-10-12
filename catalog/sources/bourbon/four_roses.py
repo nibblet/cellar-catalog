@@ -2,7 +2,9 @@
 line, "90 Proof / Aged 6 - 7 Years", and the bottle shot is the second /images/bourbons/ file the page
 renders (a background comes first). Recipe single barrels (OBSV, OESK…) are releases of Single Barrel; each year's
 Limited Edition Small Batch is a release of the one Limited Edition Small Batch bottling (the newest
-year supplies its facts); Al Young 50th, Anthology and Experimental releases keep their own names."""
+year supplies its facts); Al Young 50th, Anthology and Experimental releases keep their own names.
+`tasting_notes` is the page's own "Tasting Notes" block (Nose / Palate / Finish, in either order); the few releases that
+print no block keep only the sentences of their intro paragraph that name the nose, palate, finish, aromas or flavors."""
 from __future__ import annotations
 
 import html
@@ -49,6 +51,33 @@ def _text(fragment: str | None) -> str | None:
     return t or None
 
 
+SENSORY = re.compile(r"\b(?:nose|palate|finish|aromas?|flavors?|notes of)\b", re.I)
+
+
+def _tasting(flat: str) -> str | None:
+    """The bottle's own Nose / Palate / Finish lines. The "our bourbons" carousel that follows carries only siblings'
+    one-line blurbs and is never read: the block ends at the first segment that is not a label or its value."""
+    segs = [s.strip().replace("\xa0", " ").replace("’", "'") for s in flat.split("|") if s.strip()]
+    for i in range(len(segs) - 1):
+        if segs[i].lower() == "tasting" and segs[i + 1].lower() == "notes":
+            parts, j = [], i + 2
+            while j + 1 < len(segs) and segs[j].lower() in ("nose", "palate", "finish"):
+                parts.append(f"{segs[j].title()}: {segs[j + 1].rstrip('. ')}.")
+                j += 2
+            return " ".join(parts) or None
+    # No block: the intro paragraph between the title and the "N Proof / Aged" line, keeping only the sensory sentences.
+    end = next((k for k, s in enumerate(segs) if re.match(r"\d{2,3}(?:\.\d+)?\s*(?:-\s*[\d.]+\s*)?Proof / Aged", s)), None)
+    start = next((k for k, s in enumerate(segs[:end]) if s == "Open main menu"), None) if end else None
+    if start is None:
+        return None
+    body = segs[start + 1:end]
+    while body and len(body[0]) < 60 and not body[0].endswith("."):
+        body.pop(0)  # the title, which the page sets in several tags
+    intro = re.sub(r"\s+", " ", " ".join(body))
+    keep = [x for x in re.split(r"(?<=[.!?])\s+", intro) if SENSORY.search(x)]
+    return " ".join(keep)[:900] or None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
     h1 = _text((re.search(r"<h1[^>]*>(.*?)</h1>", page, re.S) or [None, ""])[1])
@@ -86,6 +115,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     img = shots[1] if len(shots) > 1 else None
     return BottlingRecord(
         brand_family=family, expression=expression, name=name, source_url=url, proof=pf, age_years=years, age_label=label,
-        class_raw="Kentucky Straight Bourbon Whiskey", mash_raw=None, mash_style=None, description=None, image_url=img,
+        class_raw="Kentucky Straight Bourbon Whiskey", mash_raw=None, mash_style=None, description=None, tasting_notes=_tasting(flat), image_url=img,
         aliases=sorted(set(aliases) - {name}), is_core_range=not NOT_CORE.search(name),
     )

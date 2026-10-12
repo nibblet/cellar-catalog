@@ -16,7 +16,9 @@ The label on the BiB bottles reads "Single Barrel Bottled in Bond" (confirmed fr
 photographs, and the pages' "single barrel program" copy), so that is the expression; the straight bottles say
 "Straight American <grain> Whiskey". The seed filed these under "Oregon Spirit Distillers <grain>" in places and
 "Oregon Spirit <grain>" in others; the family is "Oregon Spirit" and the name is `Oregon Spirit <expression>`.
-The old names are aliases so each existing row claims its page by name."""
+The old names are aliases so each existing row claims its page by name. `tasting_notes` is the page's own "Tasting Notes"
+block (Aroma / Palate / Finish / Mouthfeel on the straight pages) or its "Flavor Notes:" list (the Bottled-in-Bond pages);
+the customer reviews and cocktail recipes lower on the page are never read."""
 from __future__ import annotations
 
 import html
@@ -73,6 +75,20 @@ def _flatten(page: str) -> str:
     return re.sub(r"(\|\s*)+", "| ", t)
 
 
+def _notes(own: str) -> str | None:
+    """The Tasting Notes block runs up to the "Age:" field, the Flavor Notes list up to "Proof:"."""
+    m = re.search(r"Tasting Notes\|(.*?)\|\s*Age:", own)
+    lead = ""
+    if not m:
+        m = re.search(r"Flavor Notes:\|(.*?)\|\s*Proof:", own)
+        lead = "Flavor notes: "
+    if not m:
+        return None
+    parts = [re.sub(r"\s+", " ", x).strip().rstrip(".") for x in m.group(1).split("|")]
+    text = ". ".join(x for x in parts if x)
+    return (lead + text + ".")[:900] if text else None
+
+
 def parse(url: str, page: str) -> BottlingRecord | None:
     slug = url.rstrip("/").split("/")[-1]
     if slug not in REFILE:
@@ -108,6 +124,6 @@ def parse(url: str, page: str) -> BottlingRecord | None:
     return BottlingRecord(
         brand_family="Oregon Spirit", expression=expression, name=name,
         source_url=f"https://oregonspiritdistillers.com/{slug}/", proof=proof, age_years=years, age_label=label,
-        class_raw=class_raw, mash_raw=mash_raw, description=desc, image_url=html.unescape(img) if img else None,
+        class_raw=class_raw, mash_raw=mash_raw, description=desc, tasting_notes=_notes(own), image_url=html.unescape(img) if img else None,
         aliases=sorted(set(aliases) - {name}), is_core_range=expression in CORE,
     )
