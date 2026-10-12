@@ -564,7 +564,7 @@ tastings add to it. Our importers never captured tasting notes, so every row the
   its catalog row with the diff, and writes `product_reviews` rows (source = the maker's domain, reviewer = the maker, one per product and page; applied
   with the service key, record in `sql/20261013_maker_tasting_notes.sql`). 217 of 1,206 records qualified, 108 of them rows with no wheel. The notes are
   the maker's own words, so they respect the maker-is-the-source rule, and they touch no facts.
-- **Headroom:** about 869 of 1,183 cached pages have tasting text near a nose/palate/finish marker, but modules only capture 217. The next step is per-module
+- **Headroom (before round two):** about 869 of 1,183 cached pages have tasting text near a nose/palate/finish marker, but modules only capture 217. The next step is per-module
   capture: set `tasting_notes` in each `parse()` from the page's own section (not the "explore other spirits" carousel), re-run `bourbon_notes.py emit`, then
   `seed:enrich`. 567 live rows still have no review text at all.
 - **Three bugs found and fixed in the web repo (uncommitted there):** (1) `wheel-enrich.ts` made every leaf a required integer 1-5, so the model had to score
@@ -573,7 +573,7 @@ tastings add to it. Our importers never captured tasting notes, so every row the
   client, which has no schema and so reads and writes the stale `public.products`, not `cellar.products`; it is now scoped to `cellar`. (3) It paged by a
   non-unique `name` and skipped rows (saw 38 of 152 candidates); it now pages by `id` with the empty-wheel filter on the server, and takes `--shard i/n`.
 - **Not fixed:** `src/lib/openai/map-wheel.ts` (member tastings to wheel) has the same required-integer schema; 4 of the 5 member tastings with a wheel are dense.
-Round two (same day): every importer now captures its own page's notes into `tasting_notes` (58 modules, six agents; each proved with a before/after
+Round two (same day; live rows with a wheel went to 698 of 962 (72.6%), core rows 384 of 531 (72.3%), 308 wheels rebuilt with 0 failures and 0 dense; 264 live rows still have no review text): every importer now captures its own page's notes into `tasting_notes` (58 modules, six agents; each proved with a before/after
 `dataclasses.asdict` dump that no other field changed). Records naming at least three real flavors went from 217 to 836, and 310 more maker-notes reviews
 were inserted (`sql/20261013_maker_tasting_notes_2.sql`) before `seed:enrich` rebuilt the wheels. Lessons:
 

@@ -108,4 +108,4 @@ entered as `seed`; re-sourcing them from distillery pages / TTB COLA is the bour
 |---|---|---|---|---|
 | 2026-10-13 (before) | 962 | 258 (26.8%) | 168 / 531 | 24 of the existing wheels were dense (all 39 leaves scored) from an extractor bug |
 | 2026-10-13 (after) | 962 | 390 (40.5%) | 235 / 531 (44.3%) | 108 maker tasting notes added as reviews; dense wheels rebuilt; 567 live rows have no review text at all |
-
+| 2026-10-13 (notes capture) | 962 | 698 (72.6%) | 384 / 531 (72.3%) | every importer captures its own tasting notes; 310 more maker-notes reviews; 308 wheels rebuilt, 4 had nothing extractable; 264 live rows have no review text |
